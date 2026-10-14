@@ -1,0 +1,29 @@
+# Used when the site is connected to a git repo. The drag-and-drop deploy
+# ignores this file — it only matters once you point Netlify at the repository,
+# which is the setup you want long term.
+[build]
+  command = "npm run build"
+  publish = "out"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# The service worker must never be cached, or a stale copy keeps serving old
+# assets after a deploy.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+# Transit JSON changes only when the weekly pipeline runs; revalidate often
+# enough that a refresh reaches people, cheaply enough to stay fast.
+[[headers]]
+  for = "/data/*"
+  [headers.values]
+    Cache-Control = "public, max-age=300, stale-while-revalidate=86400"
+
+# Next fingerprints these, so they can be cached hard.
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

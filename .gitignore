@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Copied from node_modules by scripts/copy-maplibre-worker.mjs on every build.
+/public/maplibre/
+
+# Browser-automation screenshots and session state.
+/.browse/
