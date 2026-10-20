@@ -1,12 +1,12 @@
 'use client';
 
-import { AUTO_TARIFF, rideApps, rideOptions } from '@/lib/lastmile';
-import { formatDistance } from '@/lib/geo';
+import { AUTO_TARIFF, WALKABLE_KM, rideApps, rideOptions } from '@/lib/lastmile';
+import { formatDistance, walkingMinutes } from '@/lib/geo';
 import { directionsUrl } from '@/lib/maps';
 import type { Station } from '@/types/transit';
 
 /**
- * How to cover the gap when the nearest station is past walking distance.
+ * How to reach the nearest station: walk, or what a ride should cost.
  *
  * The design problem here is credibility. Every app price is an estimate
  * against demand pricing nobody can predict; exactly one figure — the auto
@@ -25,6 +25,7 @@ export function LastMile({
   const hour = Math.floor(minutesSinceMidnight / 60);
   const meter = rideOptions(distanceKm, hour).find((o) => o.exact)!;
   const apps = rideApps(distanceKm, hour, station.lat, station.lon, station.name);
+  const walkable = distanceKm <= WALKABLE_KM;
 
   return (
     <section
@@ -40,7 +41,15 @@ export function LastMile({
           Getting to {station.name}
         </h2>
         <p className="mt-0.5 text-[0.8125rem]" style={{ color: 'var(--muted)' }}>
-          {formatDistance(distanceKm)} away — further than most people want to walk.
+          {/*
+            Recommending a ₹49 auto for a two-minute walk would be absurd, so
+            when it is walkable the walk leads and the fares are the
+            alternative — rather than hiding the fares, which is what this
+            card used to do.
+          */}
+          {walkable
+            ? <>{formatDistance(distanceKm)} · about {walkingMinutes(distanceKm)} min walk. Or ride:</>
+            : <>{formatDistance(distanceKm)} away — further than most people want to walk.</>}
         </p>
       </header>
 
@@ -132,7 +141,7 @@ export function LastMile({
           className="mt-2.5 inline-flex text-[0.8125rem] font-medium underline underline-offset-2"
           style={{ color: 'var(--accent)' }}
         >
-          Walking directions instead
+          {walkable ? 'Walking directions' : 'Walking directions instead'}
         </a>
       </div>
 

@@ -7,7 +7,6 @@ import {
   type Station,
 } from '@/types/transit';
 import { nearestStations, SERVICE_RADIUS_KM } from '@/lib/geo';
-import { WALKABLE_KM } from '@/lib/lastmile';
 import { nowInBengaluru } from '@/lib/time';
 import { useLocation } from '@/lib/useLocation';
 import { BusJourney } from './BusJourney';
@@ -198,13 +197,20 @@ export function Browse({
         )}
 
         {/*
-          Past a walk, the honest next question is "so how do I actually get
-          there", and the answer used to be nothing at all. Keyed on the
-          nearest station only — offering rides to the second-nearest is
-          noise. Waits for `now` because the night tariff needs a clock.
+          "How do I actually get there" — shown whenever we know where you
+          are, not only when the station is far.
+
+          This was gated on distance > 1km, which sounded reasonable and was
+          wrong in practice: most people near a metro are WITHIN a kilometre
+          of it, so the fares were invisible to exactly the people who open
+          this standing next to a station and want to know what an auto
+          should cost. The card adapts its framing instead of disappearing.
+
+          Keyed on the nearest station only — offering rides to the
+          second-nearest is noise. Waits for `now` because the night tariff
+          needs a clock.
         */}
-        {state.status === 'ready' && !outOfArea && now
-          && nearest.length > 0 && nearest[0].distanceKm > WALKABLE_KM && (
+        {state.status === 'ready' && !outOfArea && now && nearest.length > 0 && (
           <section className="min-w-0 md:col-span-2">
             <LastMile
               station={nearest[0].item}
