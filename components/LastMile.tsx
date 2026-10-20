@@ -86,8 +86,19 @@ export function LastMile({
             <li key={app.name}>
               <a
                 href={app.href}
-                target="_blank"
-                rel="noopener noreferrer"
+                /*
+                  Deliberately NOT target="_blank".
+
+                  These are Universal Links (iOS) and App Links (Android):
+                  the OS intercepts the https URL and hands off to the
+                  installed app. That handoff is only dependable on a plain
+                  top-level navigation from a tap — opening in a new tab makes
+                  Safari render the website instead often enough to matter,
+                  which is exactly the "it doesn't open the app" complaint.
+                  Leaving the page is the right outcome here anyway; the user
+                  is going to book a ride, and Back returns them.
+                */
+                rel="noreferrer"
                 className="tap flex min-w-0 flex-col justify-center gap-1 px-3 py-2"
                 style={{
                   borderRadius: 'var(--r-md)',
@@ -134,10 +145,12 @@ export function LastMile({
           ))}
         </ul>
 
+        {/* No target="_blank", same reasoning as the app links above: this is
+            a Google Maps universal link, and the handoff to the Maps app is
+            reliable on a top-level navigation. */}
         <a
           href={directionsUrl(station.lat, station.lon, `${station.name} Metro Station`)}
-          target="_blank"
-          rel="noopener noreferrer"
+          rel="noreferrer"
           className="mt-2.5 inline-flex text-[0.8125rem] font-medium underline underline-offset-2"
           style={{ color: 'var(--accent)' }}
         >
