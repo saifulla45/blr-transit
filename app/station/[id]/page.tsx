@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { toLite } from '@/types/transit';
 import { notFound } from 'next/navigation';
+import { OG_IMAGE } from '@/lib/site';
 import { BusesPanel } from '@/components/BusesPanel';
 import { DepartureBoard } from '@/components/DepartureBoard';
 import { EntrancesPanel } from '@/components/EntrancesPanel';
@@ -32,10 +33,32 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const { stations } = await getStationsIndex();
   const station = stations.find((s) => s.id === id);
-  if (!station) return { title: 'Station not found — Namma Commute' };
+  if (!station) return { title: 'Station not found' };
+
+  const title = `${station.name} metro station`;
+  const description =
+    `Scheduled trains, parking, buses, fares and nearby places at ${station.name} `
+    + 'metro station, Bengaluru.';
+
   return {
-    title: `${station.name} — Namma Commute`,
-    description: `Scheduled trains, parking, buses, fares and nearby places at ${station.name} metro station, Bengaluru.`,
+    title: station.name,
+    description,
+    alternates: { canonical: `/station/${station.id}/` },
+    /*
+      Set explicitly: `title` does not flow into og:title, so without this
+      every one of the 83 station links shared on WhatsApp previewed as the
+      generic site name. Station URLs are the ones people actually send each
+      other, so this is the preview that matters most.
+    */
+    openGraph: {
+      title,
+      description,
+      url: `/station/${station.id}/`,
+      type: 'website' as const,
+      // Repeated, not inherited — see OG_IMAGE.
+      images: [OG_IMAGE],
+    },
+    twitter: { title, description, images: [OG_IMAGE.url] },
   };
 }
 

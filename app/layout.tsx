@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Barlow, IBM_Plex_Mono } from 'next/font/google';
 import { RegisterSW } from '@/components/RegisterSW';
+import { OG_IMAGE, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/site';
 import './globals.css';
 
 // Barlow is a grotesk drawn from public-signage lettering — the vernacular this
@@ -22,14 +23,45 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Namma Commute',
-  description:
-    'Your nearest Bengaluru metro station: scheduled trains, station parking, fares and what is around it.',
-  authors: [{ name: 'Saifulla Attar' }],
+  // metadataBase resolves the relative URLs below into absolute ones. Without
+  // it Next emits a relative og:image, and WhatsApp, Slack and Twitter all
+  // fetch the card out of band with no page to resolve it against — so the
+  // preview silently falls back to a bare link.
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: SITE_NAME,
+    // Station pages set their own name and inherit the suffix.
+    template: `%s — ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  authors: [{ name: 'Saifulla Attar', url: 'https://www.linkedin.com/in/mdsaifullaattar' }],
   creator: 'Saifulla Attar',
   manifest: '/manifest.webmanifest',
-  appleWebApp: { capable: true, title: 'Namma Commute', statusBarStyle: 'black-translucent' },
+  appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: 'black-translucent' },
   icons: { icon: '/icon.svg', apple: '/icon.svg' },
+  keywords: [
+    'Namma Metro', 'Bengaluru metro', 'Bangalore metro timings', 'metro fare',
+    'BMRCL', 'BMTC bus', 'metro parking', 'nearest metro station',
+  ],
+  openGraph: {
+    type: 'website',
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    locale: 'en_IN',
+    url: '/',
+    images: [OG_IMAGE],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    images: ['/og.png'],
+  },
+  // Nothing here is private, and the 83 station pages are only reachable via
+  // in-page links, so crawling them is actively wanted.
+  robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {

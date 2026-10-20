@@ -2,6 +2,7 @@
 
 import { haversineKm } from '@/lib/geo';
 import { isInIndia, nearestMetroCity } from '@/lib/cities';
+import { CityPicker } from './CityPicker';
 
 /**
  * What someone outside Bengaluru sees.
@@ -81,6 +82,10 @@ export function OutOfArea({
             ? 'Planning a Bengaluru trip? Search or browse all 83 stations below.'
             : 'Search or browse all 83 stations below.'}
         </p>
+
+        {/* Nearest-city guessing is a convenience, not an answer: people
+            travel, and the one we picked may not be the one they want. */}
+        <CityPicker highlight={match?.city.name} />
       </div>
     </section>
   );

@@ -1,5 +1,7 @@
+import Link from 'next/link';
 import { Browse } from '@/components/Browse';
 import { Credit } from '@/components/Credit';
+import { CityPicker } from '@/components/CityPicker';
 import { getFareWindows, getNetwork, getOverrides, getStationsIndex } from '@/lib/data';
 
 export default async function HomePage() {
@@ -57,6 +59,15 @@ export default async function HomePage() {
               Bangalore Metro Purple Line
             </a>{' '}
             by Fly2Blue, CC0.
+          </p>
+          {/* Not only for people the geolocation placed elsewhere: plenty of
+              visitors are planning a trip to a city they are not in yet. */}
+          <CityPicker />
+
+          <p className="mt-4 flex flex-wrap gap-x-4 gap-y-1">
+            <Link className="underline" href="/about/">About &amp; data sources</Link>
+            <Link className="underline" href="/privacy/">Privacy</Link>
+            <Link className="underline" href="/map/">Network map</Link>
           </p>
           <p className="mt-3"><Credit /></p>
         </footer>

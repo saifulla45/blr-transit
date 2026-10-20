@@ -6,7 +6,7 @@ import { Credit } from '@/components/Credit';
 import { getStationsIndex } from '@/lib/data';
 
 export const metadata: Metadata = {
-  title: 'Network map — Namma Commute',
+  title: 'Network map',
   description: 'The whole Namma Metro network: Purple, Green and Yellow lines, all 83 stations.',
 };
 
