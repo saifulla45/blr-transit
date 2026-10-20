@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   AUTO_TARIFF, ROAD_FACTOR, isNightTariff, meteredAutoFare, rideAppLinks, rideOptions,
+  rideApps,
 } from '../lastmile';
 
 describe('isNightTariff', () => {
@@ -133,5 +134,79 @@ describe('rideAppLinks', () => {
       const url = new URL(link.href);
       expect(url.protocol).toBe('https:');
     }
+  });
+});
+
+describe('rideApps', () => {
+  const apps = (km = 4, hour = 12) => rideApps(km, hour, 12.9784, 77.6408, 'Indiranagar');
+  const byName = (n: string, km = 4, hour = 12) => apps(km, hour).find((a) => a.name === n)!;
+
+  it('prices Namma Yatri autos off the meter, not the demand band', () => {
+    // The whole point of the per-app split: zero commission and no rider
+    // booking fee means its auto fare starts at the regulated figure.
+    const meter = meteredAutoFare(4, 12);
+    const ny = byName('Namma Yatri').modes.find((m) => m.kind === 'auto')!;
+    expect(ny.low).toBe(meter);
+
+    const uber = byName('Uber').modes.find((m) => m.kind === 'auto')!;
+    expect(uber.low).toBeGreaterThan(meter);
+  });
+
+  it('never quotes any app below the regulated meter for an auto', () => {
+    // An app auto undercutting the legal rate would be a fabricated number.
+    const meter = meteredAutoFare(6, 12);
+    for (const app of apps(6)) {
+      const auto = app.modes.find((m) => m.kind === 'auto');
+      if (auto) expect(auto.low, app.name).toBeGreaterThanOrEqual(meter);
+    }
+  });
+
+  it('puts Rapido auto below Uber and Ola but not below the meter', () => {
+    const rapido = byName('Rapido').modes.find((m) => m.kind === 'auto')!;
+    const uber = byName('Uber').modes.find((m) => m.kind === 'auto')!;
+    expect(rapido.low).toBeLessThanOrEqual(uber.low);
+    expect(rapido.high).toBeLessThan(uber.high);
+  });
+
+  it('claims no cab discount for Rapido', () => {
+    // A 2km Bengaluru trip quoted higher on Rapido cab than Uber cab, so
+    // the "Rapido is cheaper" generalisation does not extend to cabs.
+    const r = byName('Rapido').modes.find((m) => m.kind === 'cab')!;
+    const u = byName('Uber').modes.find((m) => m.kind === 'cab')!;
+    expect(r.low).toBe(u.low);
+    expect(r.high).toBe(u.high);
+  });
+
+  it('offers bikes only on the apps that run them', () => {
+    expect(byName('Namma Yatri').modes.some((m) => m.kind === 'bike')).toBe(false);
+    for (const n of ['Rapido', 'Uber', 'Ola']) {
+      expect(byName(n).modes.some((m) => m.kind === 'bike'), n).toBe(true);
+    }
+  });
+
+  it('gives every mode a real range and keeps it ordered', () => {
+    for (const app of apps()) {
+      expect(app.modes.length).toBeGreaterThan(0);
+      for (const m of app.modes) {
+        expect(m.high, `${app.name} ${m.label}`).toBeGreaterThan(m.low);
+        expect(m.low).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('scales every app with the night tariff', () => {
+    for (const name of ['Namma Yatri', 'Rapido', 'Uber', 'Ola']) {
+      const day = byName(name, 6, 12).modes.find((m) => m.kind === 'auto')!;
+      const night = byName(name, 6, 23).modes.find((m) => m.kind === 'auto')!;
+      expect(night.low, name).toBeGreaterThan(day.low);
+    }
+  });
+
+  it('carries the booking links through unchanged', () => {
+    for (const app of apps()) {
+      expect(new URL(app.href).protocol).toBe('https:');
+      if (app.hasDestination) expect(app.href).toContain('12.9784');
+    }
+    expect(apps()[0].name).toBe('Namma Yatri');
   });
 });

@@ -184,6 +184,85 @@ export function rideAppLinks(lat: number, lon: number, stationName: string) {
   ];
 }
 
+export interface AppMode {
+  kind: 'bike' | 'auto' | 'cab';
+  label: string;
+  low: number;
+  high: number;
+}
+
+export interface RideApp {
+  name: string;
+  href: string;
+  hasDestination: boolean;
+  modes: AppMode[];
+  note?: string;
+}
+
+/**
+ * What each app will roughly charge, by vehicle.
+ *
+ * Why apps differ at all, rather than every one of them showing the same
+ * three numbers:
+ *
+ *  - Namma Yatri prices autos off the government meter and takes zero
+ *    commission, with no rider booking or convenience fee — drivers are paid
+ *    directly. Its auto fare therefore sits at or just above the meter
+ *    instead of 30-90% over it.
+ *  - Uber and Ola moved autos to zero commission for DRIVERS (Uber in Feb
+ *    2025, Ola in June 2025), but riders are still charged demand pricing,
+ *    so they keep the wider band.
+ *  - Rapido is the bike-first operator and undercuts on bike and auto, but
+ *    its cabs are not reliably cheaper — a 2km Bengaluru trip quoted higher
+ *    on Rapido cab than Uber cab. So no cab discount is claimed.
+ *
+ * Still estimates, and still labelled as such in the UI. The one number
+ * anyone can hold a driver to is the meter.
+ */
+export function rideApps(
+  straightLineKm: number,
+  hour: number,
+  lat: number,
+  lon: number,
+  stationName: string,
+): RideApp[] {
+  const meter = meteredAutoFare(straightLineKm, hour);
+  const options = rideOptions(straightLineKm, hour);
+  const get = (mode: RideMode) => options.find((o) => o.mode === mode)!;
+
+  const r5 = (n: number) => Math.round(n / 5) * 5;
+  const bike = get('bike');
+  const appAuto = get('auto-app');
+  const cab = get('cab');
+
+  // Metered, plus the room a tip or surge still leaves.
+  const meterAuto: AppMode = { kind: 'auto', label: 'Auto', low: meter, high: Math.max(meter + 10, r5(meter * 1.25)) };
+  const demandAuto: AppMode = { kind: 'auto', label: 'Auto', low: appAuto.low, high: appAuto.high };
+  // Rapido undercuts on auto but is not a different vehicle, so it sits
+  // between the meter and the full demand band rather than below the meter.
+  const rapidoAuto: AppMode = { kind: 'auto', label: 'Auto', low: Math.max(meter, r5(appAuto.low * 0.8)), high: r5(appAuto.high * 0.85) };
+  const bikeMode: AppMode = { kind: 'bike', label: 'Bike', low: bike.low, high: bike.high };
+  const cabMode: AppMode = { kind: 'cab', label: 'Cab', low: cab.low, high: cab.high };
+
+  const links = rideAppLinks(lat, lon, stationName);
+  const href = (name: string) => links.find((l) => l.name === name)!;
+
+  return [
+    {
+      ...href('Namma Yatri'),
+      modes: [meterAuto, cabMode],
+      note: 'Meter-priced, zero commission',
+    },
+    {
+      ...href('Rapido'),
+      modes: [bikeMode, rapidoAuto, cabMode],
+      note: 'Usually cheapest',
+    },
+    { ...href('Uber'), modes: [bikeMode, demandAuto, cabMode], note: 'Demand pricing' },
+    { ...href('Ola'), modes: [bikeMode, demandAuto, cabMode], note: 'Demand pricing' },
+  ];
+}
+
 /**
  * Below this the answer is "walk" and a ride card would be noise.
  * 1 km is roughly a 15 minute walk at the padded pace used elsewhere.

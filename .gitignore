@@ -45,3 +45,6 @@ next-env.d.ts
 
 # Browser-automation screenshots and session state.
 /.browse/
+
+# Local Netlify folder
+.netlify

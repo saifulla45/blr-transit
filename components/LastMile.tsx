@@ -1,6 +1,6 @@
 'use client';
 
-import { AUTO_TARIFF, rideAppLinks, rideOptions, type RideOption } from '@/lib/lastmile';
+import { AUTO_TARIFF, rideApps, rideOptions } from '@/lib/lastmile';
 import { formatDistance } from '@/lib/geo';
 import { directionsUrl } from '@/lib/maps';
 import type { Station } from '@/types/transit';
@@ -8,11 +8,11 @@ import type { Station } from '@/types/transit';
 /**
  * How to cover the gap when the nearest station is past walking distance.
  *
- * The design problem here is credibility. Three of the four fares are
- * estimates against demand pricing nobody can predict, and one — the auto
- * meter — is a published legal rate. Flattening them into one list of
- * confident numbers would launder the guesswork into fact, so the exact fare
- * is typographically distinct and the estimates wear their ranges openly.
+ * The design problem here is credibility. Every app price is an estimate
+ * against demand pricing nobody can predict; exactly one figure — the auto
+ * meter — is a published legal rate. Listing them together as equals would
+ * launder the guesswork into fact, so the meter stands alone above the apps
+ * in the accent colour, and every app price wears a range.
  */
 export function LastMile({
   station, distanceKm, minutesSinceMidnight,
@@ -23,8 +23,8 @@ export function LastMile({
   minutesSinceMidnight: number;
 }) {
   const hour = Math.floor(minutesSinceMidnight / 60);
-  const options = rideOptions(distanceKm, hour);
-  const apps = rideAppLinks(station.lat, station.lon, station.name);
+  const meter = rideOptions(distanceKm, hour).find((o) => o.exact)!;
+  const apps = rideApps(distanceKm, hour, station.lat, station.lon, station.name);
 
   return (
     <section
@@ -44,44 +44,86 @@ export function LastMile({
         </p>
       </header>
 
-      <ul className="flex flex-col" style={{ borderTop: '1px solid var(--rule)' }}>
-        {options.map((option) => (
-          <FareRow key={option.mode} option={option} />
-        ))}
-      </ul>
+      {/*
+        The anchor, alone above the apps.
+
+        Every app price below is an estimate against demand pricing; this is
+        the one figure anyone can hold a driver to, so it is stated once,
+        prominently, rather than buried as the second of four similar-looking
+        rows where it reads as just another guess.
+      */}
+      <div
+        className="flex items-baseline gap-3 px-4 py-2.5"
+        style={{ borderTop: '1px solid var(--rule)', borderBottom: '1px solid var(--rule)' }}
+      >
+        <div className="min-w-0 flex-1">
+          <p className="text-[0.875rem] font-medium">{meter.label}</p>
+          <p className="text-[0.75rem] leading-snug" style={{ color: 'var(--muted)' }}>
+            {meter.note}
+          </p>
+        </div>
+        <div className="shrink-0 text-right">
+          <p className="num text-[1.0625rem] font-semibold" style={{ color: 'var(--accent)' }}>
+            ₹{meter.low}
+          </p>
+          <p className="text-[0.6875rem]" style={{ color: 'var(--muted)' }}>fixed by law</p>
+        </div>
+      </div>
 
       <div className="px-4 py-3" style={{ borderTop: '1px solid var(--rule)' }}>
         <p className="eyebrow pb-2">Book a ride</p>
-        <div className="flex flex-wrap gap-2">
+        <ul className="flex flex-col gap-1.5">
           {apps.map((app) => (
-            <a
-              key={app.name}
-              href={app.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="tap inline-flex items-center px-3.5 text-[0.8125rem] font-semibold"
-              style={{
-                borderRadius: 'var(--r-md)',
-                border: '1px solid var(--rule)',
-                background: 'var(--raised)',
-                color: 'var(--ink)',
-                lineHeight: '44px',
-              }}
-              aria-label={
-                app.hasDestination
-                  ? `Open ${app.name} with ${station.name} metro station set as the destination`
-                  : `Open ${app.name}`
-              }
-            >
-              {app.name}
-              {!app.hasDestination && (
-                <span className="pl-1.5 text-[0.6875rem] font-normal" style={{ color: 'var(--muted)' }}>
-                  app
+            <li key={app.name}>
+              <a
+                href={app.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="tap flex min-w-0 flex-col justify-center gap-1 px-3 py-2"
+                style={{
+                  borderRadius: 'var(--r-md)',
+                  border: '1px solid var(--rule)',
+                  background: 'var(--raised)',
+                  color: 'var(--ink)',
+                }}
+                aria-label={
+                  `${app.name}: ${app.modes.map((m) => `${m.label} ₹${m.low} to ₹${m.high}`).join(', ')}. `
+                  + (app.hasDestination
+                    ? `Opens with ${station.name} metro station set as the destination.`
+                    : 'Opens the app.')
+                }
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  {/*
+                    The name never shrinks and the note does. Reversed, a long
+                    note squeezed "Namma Yatri" to zero width and the row
+                    rendered as an anonymous price list.
+                  */}
+                  <span className="shrink-0 text-[0.875rem] font-semibold">{app.name}</span>
+                  {app.note && (
+                    <span
+                      className="ml-auto min-w-0 truncate text-[0.6875rem]"
+                      style={{ color: 'var(--muted)' }}
+                    >
+                      {app.note}
+                    </span>
+                  )}
                 </span>
-              )}
-            </a>
+
+                <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                  {app.modes.map((m) => (
+                    <span key={m.kind} className="flex items-baseline gap-1 text-[0.75rem]">
+                      <span style={{ color: 'var(--muted)' }}>{m.label}</span>
+                      <span className="num font-semibold">
+                        ₹{m.low}&ndash;{m.high}
+                      </span>
+                    </span>
+                  ))}
+                </span>
+              </a>
+            </li>
           ))}
-        </div>
+        </ul>
 
         <a
           href={directionsUrl(station.lat, station.lon, `${station.name} Metro Station`)}
@@ -103,43 +145,14 @@ export function LastMile({
         1.5&times; from 10pm to 5am), checked {AUTO_TARIFF.lastVerified}. App fares are estimates
         only — they move with demand and weather, and the app will quote the real price.
         Distances are straight-line with a road allowance, so treat them as approximate.
+        {' '}
+        {/* Moved here when the generic bike row was removed; it is a caveat
+            about availability rather than price, and it applies to whichever
+            of the three apps you pick. */}
+        Bike taxis are operating under appeal in Karnataka, so they may not be
+        bookable on the day.
       </p>
     </section>
   );
 }
 
-function FareRow({ option }: { option: RideOption }) {
-  const range = option.exact
-    ? `₹${option.low}`
-    : `₹${option.low}–${option.high}`;
-
-  return (
-    <li
-      className="flex min-w-0 items-baseline gap-3 px-4 py-2.5"
-      style={{ borderBottom: '1px solid var(--rule)' }}
-    >
-      <div className="min-w-0 flex-1">
-        <p className="text-[0.875rem] font-medium">{option.label}</p>
-        {option.note && (
-          <p className="text-[0.75rem] leading-snug" style={{ color: 'var(--muted)' }}>
-            {option.note}
-          </p>
-        )}
-      </div>
-
-      <div className="shrink-0 text-right">
-        <p
-          className="num text-[0.9375rem] font-semibold"
-          // The regulated fare is the only trustworthy number here, so it is
-          // the only one given the accent.
-          style={{ color: option.exact ? 'var(--accent)' : 'var(--ink)' }}
-        >
-          {range}
-        </p>
-        <p className="text-[0.6875rem]" style={{ color: 'var(--muted)' }}>
-          {option.exact ? 'fixed by law' : 'estimate'}
-        </p>
-      </div>
-    </li>
-  );
-}
