@@ -1,14 +1,18 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   toLite,
   type CalendarOverrides, type FareWindows, type Line, type LineId, type NetworkStatus,
   type Station,
 } from '@/types/transit';
 import { nearestStations, SERVICE_RADIUS_KM } from '@/lib/geo';
+import { WALKABLE_KM } from '@/lib/lastmile';
+import { nowInBengaluru } from '@/lib/time';
 import { useLocation } from '@/lib/useLocation';
 import { BusJourney } from './BusJourney';
+import { LastMile } from './LastMile';
+import { OutOfArea } from './OutOfArea';
 import { MetroPlanner } from './MetroPlanner';
 import { RecentStations } from './RecentStations';
 import { SavedStations } from './SavedStations';
@@ -34,6 +38,20 @@ export function Browse({
   const { state, request } = useLocation();
   const [q] = useState('');
   const [filter, setFilter] = useState<Filter>('ALL');
+
+  /*
+    Same null-until-mounted pattern as the departure boards: the server has no
+    clock in Bengaluru's timezone that agrees with the client's, so anything
+    derived from "now" has to arrive after hydration or the markup mismatches.
+    Only used for the 10pm night tariff, hence the lazy minute tick.
+  */
+  const [now, setNow] = useState<ReturnType<typeof nowInBengaluru> | null>(null);
+  useEffect(() => {
+    const tick = () => setNow(nowInBengaluru());
+    tick();
+    const id = setInterval(tick, 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const nearest = state.status === 'ready'
     ? nearestStations(state.coords.lat, state.coords.lon, stations, 4)
@@ -159,26 +177,11 @@ export function Browse({
         <RecentStations stations={stations} lines={lines} />
 
         {state.status === 'ready' && outOfArea && (
-          <section className="stop-in min-w-0 md:col-span-2">
-            <div
-              className="flex gap-2.5 p-3"
-              style={{
-                borderRadius: 'var(--r-md)',
-                background: 'color-mix(in srgb, var(--warn) 14%, transparent)',
-                border: '1px solid color-mix(in srgb, var(--warn) 45%, transparent)',
-              }}
-            >
-              <div className="text-[0.8125rem] leading-relaxed">
-                <p className="font-semibold" style={{ color: 'var(--warn)' }}>
-                  You don&rsquo;t appear to be in Bengaluru
-                </p>
-                <p className="mt-1" style={{ color: 'var(--ink)' }}>
-                  The closest station is {Math.round(nearest[0].distanceKm)} km away. Search or
-                  browse the network below instead.
-                </p>
-              </div>
-            </div>
-          </section>
+          <OutOfArea
+            lat={state.coords.lat}
+            lon={state.coords.lon}
+            nearestStationKm={nearest[0].distanceKm}
+          />
         )}
 
         {state.status === 'ready' && !outOfArea && (
@@ -191,6 +194,23 @@ export function Browse({
                 <StationRow key={item.id} station={item} lines={lines} distanceKm={distanceKm} />
               ))}
             </div>
+          </section>
+        )}
+
+        {/*
+          Past a walk, the honest next question is "so how do I actually get
+          there", and the answer used to be nothing at all. Keyed on the
+          nearest station only — offering rides to the second-nearest is
+          noise. Waits for `now` because the night tariff needs a clock.
+        */}
+        {state.status === 'ready' && !outOfArea && now
+          && nearest.length > 0 && nearest[0].distanceKm > WALKABLE_KM && (
+          <section className="min-w-0 md:col-span-2">
+            <LastMile
+              station={nearest[0].item}
+              distanceKm={nearest[0].distanceKm}
+              minutesSinceMidnight={now.minutes}
+            />
           </section>
         )}
 
