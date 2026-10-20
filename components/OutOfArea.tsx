@@ -1,41 +1,21 @@
-'use client';
-
-import { haversineKm } from '@/lib/geo';
-import { isInIndia, nearestMetroCity } from '@/lib/cities';
-import { CityPicker } from './CityPicker';
-
 /**
- * What someone outside Bengaluru sees.
+ * The notice shown to someone outside Bengaluru.
  *
- * The site is on the open internet, so a share on WhatsApp reaches Chennai
- * and Dubai as easily as Jayanagar. The previous version told those visitors
- * the nearest station was 290 km away and stopped there, which is accurate
- * and insulting — they know where they are.
+ * This site is deliberately about one city. An earlier version tried to be
+ * useful to everyone — it named the visitor's city and offered a grid of
+ * eighteen other operators — which turned a Bengaluru tool into a directory
+ * of links it does not maintain and cannot vouch for.
  *
- * Three cases, in descending order of how much we can help:
- *   1. Near another Indian metro — name it and hand over their operator.
- *   2. Elsewhere in India — say plainly that this is Bengaluru-only.
- *   3. Abroad — same, minus the pretence that we know the local network.
+ * So: say plainly that the location-based answers do not apply here, and get
+ * out of the way. Everything that does not depend on where you are standing —
+ * search, all 83 stations, the network map, fares, the journey planner —
+ * stays available below, because planning a Bengaluru trip from elsewhere is
+ * a perfectly good reason to be on this page.
  *
- * Every case keeps the browse and search below usable, because planning a
- * Bengaluru trip from somewhere else is a real reason to be here.
+ * Not a client component any more: with the city lookup gone there is nothing
+ * here but text.
  */
-export function OutOfArea({
-  lat, lon, nearestStationKm,
-}: {
-  lat: number;
-  lon: number;
-  nearestStationKm: number;
-}) {
-  const match = nearestMetroCity(lat, lon, haversineKm);
-  const inIndia = isInIndia(lat, lon);
-
-  const heading = match
-    ? `You're in ${match.city.name}, not Bengaluru`
-    : inIndia
-      ? 'You’re outside Bengaluru'
-      : 'You’re outside India';
-
+export function OutOfArea({ nearestStationKm }: { nearestStationKm: number }) {
   return (
     <section
       className="stop-in min-w-0 md:col-span-2"
@@ -47,60 +27,15 @@ export function OutOfArea({
     >
       <div className="px-4 py-3.5">
         <p className="text-[0.9375rem] font-semibold" style={{ color: 'var(--warn)' }}>
-          {heading}
+          You&rsquo;re outside Bengaluru
         </p>
-
         <p className="mt-1 text-[0.8125rem] leading-relaxed" style={{ color: 'var(--ink)' }}>
-          This covers Bengaluru&rsquo;s Namma Metro only — the nearest station is{' '}
-          <span className="num">{Math.round(nearestStationKm).toLocaleString('en-IN')} km</span> away.
-          {/* No call to action here when there is no city to hand over to —
-              the line below already points at search, and saying "below"
-              twice in consecutive sentences reads as a copy error. */}
-          {match && ` ${match.city.name} has its own network:`}
+          This site covers Bengaluru&rsquo;s Namma Metro only, and the nearest station is{' '}
+          <span className="num">{Math.round(nearestStationKm).toLocaleString('en-IN')} km</span>{' '}
+          away — so &ldquo;nearest to you&rdquo; has been left out. Everything else works:
+          search any station, browse all 83, plan a journey and check fares below.
         </p>
-
-        {match && (
-          <a
-            href={match.city.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="tap mt-2.5 inline-flex items-center gap-1.5 px-3.5 text-[0.875rem] font-semibold"
-            style={{
-              borderRadius: 'var(--r-md)',
-              background: 'var(--accent)',
-              color: 'var(--on-accent)',
-              lineHeight: '44px',
-            }}
-          >
-            {match.city.system}
-            <Arrow />
-          </a>
-        )}
-
-        <p className="mt-2.5 text-[0.75rem]" style={{ color: 'var(--muted)' }}>
-          {match
-            ? 'Planning a Bengaluru trip? Search or browse all 83 stations below.'
-            : 'Search or browse all 83 stations below.'}
-        </p>
-
-        {/* Nearest-city guessing is a convenience, not an answer: people
-            travel, and the one we picked may not be the one they want. */}
-        <CityPicker highlight={match?.city.name} />
       </div>
     </section>
-  );
-}
-
-function Arrow() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path
-        d="M6 3h7v7M13 3 3.5 12.5"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }

@@ -176,11 +176,7 @@ export function Browse({
         <RecentStations stations={stations} lines={lines} />
 
         {state.status === 'ready' && outOfArea && (
-          <OutOfArea
-            lat={state.coords.lat}
-            lon={state.coords.lon}
-            nearestStationKm={nearest[0].distanceKm}
-          />
+          <OutOfArea nearestStationKm={nearest[0].distanceKm} />
         )}
 
         {state.status === 'ready' && !outOfArea && (
@@ -232,7 +228,7 @@ export function Browse({
         {/* Buses are the other half of "how do I get there from here", so the
             journey search sits right under the nearest stations rather than
             being buried on a station page. */}
-        {state.status === 'ready' && (
+        {state.status === 'ready' && !outOfArea && (
           <section className="min-w-0 md:col-span-2">
             <BusJourney lat={state.coords.lat} lon={state.coords.lon} />
           </section>
