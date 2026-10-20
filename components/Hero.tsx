@@ -31,7 +31,7 @@ export function Hero({
         {/* Photograph as texture, not subject: heavily darkened so the violet
             light sources above it stay the dominant colour. */}
         <Image
-          src="/hero/platform.jpg"
+          src="/hero/platform.webp"
           alt=""
           fill
           priority
@@ -98,7 +98,14 @@ export function Hero({
               <dd
                 className="num text-[1.625rem] font-semibold leading-none md:text-[2rem]"
                 style={{
-                  fontFamily: 'var(--font-mono), monospace',
+                  /*
+                    The UI face, not the mono one used elsewhere for figures.
+                    In monospace a comma takes a full character cell, so
+                    "15,832" rendered as "15 , 832" — unnoticeable in a dense
+                    column of departure times, and plainly a typo at display
+                    size. `.num` keeps these tabular so the two columns of
+                    stats still line up.
+                  */
                   color: 'var(--accent)',
                   // A soft bloom so the numerals read as light rather than ink.
                   textShadow: '0 0 22px rgba(194,100,216,.45)',

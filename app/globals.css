@@ -144,7 +144,17 @@ body {
   color: transparent;
 }
 
-/* Tabular figures everywhere digits are compared or stacked. */
+/*
+  Figures that are compared or stacked in columns.
+
+  A no-op on the mono face, which is tabular by construction — it earns its
+  keep on the proportional UI face, where the hero stats are set.
+
+  Worth knowing when choosing between the two faces: in monospace a comma
+  occupies a full character cell, so "15,832" reads as "15 , 832". That is
+  fine in a dense column of times and wrong at display size, which is why the
+  hero stats use the UI face and the departure boards use mono.
+*/
 .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
 
 /* Signage-style label: small, spaced, uppercase. */

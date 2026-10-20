@@ -23,7 +23,7 @@ the device clock — always current, no server required.
 BMRCL GTFS + BMRCL parking page + BMTC GTFS + OpenStreetMap
         -> scripts/build-data.ts
         -> public/data/*.json
-        -> prerendered pages -> Vercel
+        -> prerendered pages -> Netlify (static export)
 ```
 
 ## Commands

@@ -23,16 +23,48 @@ export function BusJourney({ lat, lon }: { lat: number; lon: number }) {
   const [dest, setDest] = useState<NearbyStop | null>(null);
   const [openPath, setOpenPath] = useState<string | null>(null);
   const started = useRef(false);
+  const panelRef = useRef<HTMLElement | null>(null);
 
+  /*
+    Deferred until the panel is near the viewport.
+
+    This used to be a bare useEffect on mount, which — despite the comment
+    above claiming otherwise — fired the moment location was granted and
+    pulled 2MB (406KB gzipped) before anyone had asked about a bus. On a
+    patchy mobile connection that is the single most expensive thing the
+    homepage did, and most visitors came for the metro and never scrolled
+    this far.
+
+    IntersectionObserver rather than a click: the panel's own content is the
+    nearest stops, so it has to load before it can show anything useful.
+    200px of rootMargin starts the fetch just before it scrolls into view, so
+    the load is usually finished by the time it is read.
+  */
   useEffect(() => {
-    if (started.current) return;
-    started.current = true;
-    setLoading(true);
-    fetch('/data/bus-network.json')
-      .then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
-      .then((n: BusNetwork) => setNetwork(n))
-      .catch(() => setFailed(true))
-      .finally(() => setLoading(false));
+    const node = panelRef.current;
+    if (!node || started.current) return undefined;
+
+    const load = () => {
+      if (started.current) return;
+      started.current = true;
+      setLoading(true);
+      fetch('/data/bus-network.json')
+        .then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
+        .then((n: BusNetwork) => setNetwork(n))
+        .catch(() => setFailed(true))
+        .finally(() => setLoading(false));
+    };
+
+    // Safari 12 and some older Android browsers lack it; those just load now
+    // rather than losing the feature.
+    if (typeof IntersectionObserver === 'undefined') { load(); return undefined; }
+
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries.some((e) => e.isIntersecting)) { load(); observer.disconnect(); } },
+      { rootMargin: '200px' },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
   }, []);
 
   const near = useMemo(
@@ -61,7 +93,7 @@ export function BusJourney({ lat, lon }: { lat: number; lon: number }) {
 
   if (failed) {
     return (
-      <Shell>
+      <Shell panelRef={panelRef}>
         <p className="text-[0.8125rem]" style={{ color: 'var(--muted)' }}>
           Could not load the bus network. Reload to try again.
         </p>
@@ -69,18 +101,20 @@ export function BusJourney({ lat, lon }: { lat: number; lon: number }) {
     );
   }
 
+  // The ref has to be mounted in every state, or the observer has nothing to
+  // watch and the fetch never starts.
   if (loading || !network) {
     return (
-      <Shell>
+      <Shell panelRef={panelRef}>
         <p className="text-[0.8125rem]" style={{ color: 'var(--muted)' }}>
-          Loading the bus network…
+          {loading ? 'Loading the bus network…' : 'Scroll down to search bus routes.'}
         </p>
       </Shell>
     );
   }
 
   return (
-    <Shell>
+    <Shell panelRef={panelRef}>
       <div className="flex flex-col gap-3">
         {/* From */}
         <div>
@@ -214,9 +248,14 @@ export function BusJourney({ lat, lon }: { lat: number; lon: number }) {
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({
+  children, panelRef,
+}: {
+  children: React.ReactNode;
+  panelRef?: React.Ref<HTMLElement>;
+}) {
   return (
-    <section>
+    <section ref={panelRef}>
       <h2 className="eyebrow flex items-center gap-1.5 pb-2">
         <BusIcon size={14} /> Which bus goes there
       </h2>
