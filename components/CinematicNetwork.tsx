@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { project, type LiveNetwork } from '@/lib/livePositions';
+import { useEffect, useRef, useState } from 'react';
+import { countRunning, project, type LiveNetwork } from '@/lib/livePositions';
+import { nowInBengaluru, servicePatternFor } from '@/lib/time';
+import type { CalendarOverrides } from '@/types/transit';
 import { lineVar } from './primitives';
 
 /**
@@ -26,11 +28,26 @@ import { lineVar } from './primitives';
  * markup either way, only the scrubbing is conditional.
  */
 
-const CAPTIONS = [
-  { title: '3 lines', body: 'Purple, Green and Yellow, end to end.' },
-  { title: '83 stations', body: 'Every one with departures, fares and parking.' },
-  { title: 'Every departure', body: 'Scheduled times, straight from BMRCL’s timetable.' },
-];
+/**
+ * The third caption carries the live train count.
+ *
+ * It is the one fact worth keeping from the separate "trains running now"
+ * panel this section replaced — two near-identical maps on one page was a
+ * duplication, but the count was the part doing real work. Folding it into
+ * a caption keeps the figure without bringing the panel back.
+ */
+function captions(running: number | null) {
+  return [
+    { title: '3 lines', body: 'Purple, Green and Yellow, end to end.' },
+    { title: '83 stations', body: 'Every one with departures, fares and parking.' },
+    running === null || running === 0
+      ? { title: 'Every departure', body: 'Scheduled times, straight from BMRCL’s timetable.' }
+      : {
+        title: `${running} trains running`,
+        body: 'Scheduled positions right now, from BMRCL’s own timetable.',
+      },
+  ];
+}
 
 /*
   Caption windows on the scroll timeline, in timeline seconds.
@@ -45,9 +62,29 @@ const CAPTION_GAP = 0.85;
 const CAPTION_FADE = 0.18;
 const CAPTION_HOLD = 0.45;
 
-export function CinematicNetwork({ net }: { net: LiveNetwork }) {
+export function CinematicNetwork({
+  net, overrides,
+}: {
+  net: LiveNetwork;
+  overrides: CalendarOverrides;
+}) {
   const root = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
+
+  // Null until mounted: the server has no Bengaluru clock, so a count
+  // rendered there would disagree with the client and flash on hydration.
+  const [running, setRunning] = useState<number | null>(null);
+  useEffect(() => {
+    const tick = () => {
+      const now = nowInBengaluru();
+      setRunning(countRunning(net, servicePatternFor(now.date, overrides, now.weekday), now.minutes));
+    };
+    tick();
+    const id = setInterval(tick, 60_000);
+    return () => clearInterval(id);
+  }, [net, overrides]);
+
+  const CAPTIONS = captions(running);
 
   const all = net.lines.flatMap((l) => l.stations);
   const { toXY, aspect } = project(all);

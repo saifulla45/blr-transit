@@ -13,7 +13,6 @@ import { useLocation } from '@/lib/useLocation';
 import { BusJourney } from './BusJourney';
 import { LastMile } from './LastMile';
 import { CinematicNetwork } from './CinematicNetwork';
-import { LiveNetwork } from './LiveNetwork';
 import { SmoothScroll } from './SmoothScroll';
 import { OutOfArea } from './OutOfArea';
 import { MetroPlanner } from './MetroPlanner';
@@ -177,7 +176,7 @@ export function Browse({
 
       {/* The one place where scrolling is the content. Immediately after the
           hero, before anything task-shaped. */}
-      <CinematicNetwork net={live} />
+      <CinematicNetwork net={live} overrides={overrides} />
 
       {/* Results sit on the page ground, not on the photograph. */}
       {/* min-w-0 throughout: grid items default to min-width:auto, so a long
@@ -185,13 +184,6 @@ export function Browse({
           horizontally on narrow screens. */}
       <div className="mx-auto grid w-full max-w-[64rem] gap-9 px-5 pt-9 md:grid-cols-2 md:gap-x-10 md:px-8 md:pt-11">
         <SavedStations stations={stations} lines={lines} />
-
-        {/* Above the location-dependent sections on purpose: this is the
-            one part of the page that is interesting before you have granted
-            anything, and it is what makes the site worth opening idly. */}
-        <section className="min-w-0 md:col-span-2">
-          <LiveNetwork net={live} overrides={overrides} />
-        </section>
 
         {state.status === 'ready' && outOfArea && (
           <OutOfArea nearestStationKm={nearest[0].distanceKm} />
