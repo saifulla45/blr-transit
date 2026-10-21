@@ -1,12 +1,15 @@
 import Link from 'next/link';
 import { Browse } from '@/components/Browse';
 import { Credit } from '@/components/Credit';
-import { getFareWindows, getNetwork, getOverrides, getStationsIndex } from '@/lib/data';
+import {
+  getFareWindows, getLiveNetwork, getNetwork, getOverrides, getStationsIndex,
+} from '@/lib/data';
 
 export default async function HomePage() {
-  const [{ stations, lines, feedVersion }, overrides, network, fareWindows] = await Promise.all([
-    getStationsIndex(), getOverrides(), getNetwork(), getFareWindows(),
-  ]);
+  const [{ stations, lines, feedVersion }, overrides, network, fareWindows, live] =
+    await Promise.all([
+      getStationsIndex(), getOverrides(), getNetwork(), getFareWindows(), getLiveNetwork(),
+    ]);
   const withParking = stations.filter((s) => s.parking).length;
   const twoWheeler = stations.reduce((n, s) => n + (s.parking?.twoWheeler ?? 0), 0);
   const fourWheeler = stations.reduce((n, s) => n + (s.parking?.fourWheeler ?? 0), 0);
@@ -30,6 +33,7 @@ export default async function HomePage() {
         overrides={overrides}
         stats={stats}
         fareWindows={fareWindows}
+        live={live}
       />
 
       <section className="mx-auto w-full max-w-[64rem] px-5 pb-14 md:px-8">

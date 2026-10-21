@@ -7,10 +7,12 @@ import {
   type Station,
 } from '@/types/transit';
 import { nearestStations, SERVICE_RADIUS_KM } from '@/lib/geo';
+import type { LiveNetwork as Net } from '@/lib/livePositions';
 import { nowInBengaluru } from '@/lib/time';
 import { useLocation } from '@/lib/useLocation';
 import { BusJourney } from './BusJourney';
 import { LastMile } from './LastMile';
+import { LiveNetwork } from './LiveNetwork';
 import { OutOfArea } from './OutOfArea';
 import { MetroPlanner } from './MetroPlanner';
 import { SavedStations } from './SavedStations';
@@ -28,10 +30,11 @@ type Filter = LineId | 'ALL';
  * something to do either way.
  */
 export function Browse({
-  stations, lines, network, overrides, stats, fareWindows,
+  stations, lines, network, overrides, stats, fareWindows, live,
 }: {
   stations: Station[]; lines: Line[]; network: NetworkStatus; overrides: CalendarOverrides;
   stats: Array<{ value: string; label: string }>; fareWindows: FareWindows;
+  live: Net;
 }) {
   const { state, request } = useLocation();
   const [q] = useState('');
@@ -172,6 +175,13 @@ export function Browse({
           horizontally on narrow screens. */}
       <div className="mx-auto grid w-full max-w-[64rem] gap-9 px-5 pt-9 md:grid-cols-2 md:gap-x-10 md:px-8 md:pt-11">
         <SavedStations stations={stations} lines={lines} />
+
+        {/* Above the location-dependent sections on purpose: this is the
+            one part of the page that is interesting before you have granted
+            anything, and it is what makes the site worth opening idly. */}
+        <section className="min-w-0 md:col-span-2">
+          <LiveNetwork net={live} overrides={overrides} />
+        </section>
 
         {state.status === 'ready' && outOfArea && (
           <OutOfArea nearestStationKm={nearest[0].distanceKm} />

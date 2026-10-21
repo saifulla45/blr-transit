@@ -14,6 +14,7 @@ import { fetchParking } from './parking';
 import { fetchPois } from './pois';
 import { fetchBuses } from './buses';
 import { buildJourneys } from './journeys';
+import { buildLiveNetwork } from './liveNetwork';
 import type {
   CalendarOverrides, DirectionId, DirectionInfo, FareMatrix, FareWindows, Line, LineId,
   NetworkStatus, ServicePattern, Station, StationEntrance, StationTimetable, StationsIndex,
@@ -245,6 +246,9 @@ async function main() {
   mkdirSync(join(OUT, 'stations'), { recursive: true });
 
   let written = 0;
+  // Retained for the live network view, which needs the two termini of each
+  // line and would otherwise re-read 83 files off disk.
+  const timetables = new Map<string, StationTimetable>();
   for (const station of stations) {
     const byPattern = acc.get(station.id);
     assert(byPattern, `Station ${station.id} (${station.name}) has no departures at all`);
@@ -284,6 +288,7 @@ async function main() {
     }
 
     const timetable: StationTimetable = { id: station.id, name: station.name, schedule };
+    timetables.set(station.id, timetable);
     writeFileSync(join(OUT, 'stations', `${station.id}.json`), JSON.stringify(timetable));
     written++;
   }
@@ -480,6 +485,21 @@ async function main() {
   writeFileSync(join(OUT, 'fare-windows.json'), JSON.stringify(fareWindows));
   writeFileSync(join(OUT, 'passes.json'), JSON.stringify(passes));
   writeFileSync(join(OUT, 'journeys.json'), JSON.stringify(journeys));
+
+  /*
+    Scheduled train positions for the live network view. One departure list
+    per line and direction plus cumulative offsets is enough to place every
+    train at any moment, which keeps this to a few thousand integers rather
+    than shipping positions.
+  */
+  const live = buildLiveNetwork(lines, stations, journeys, timetables, PATTERNS);
+  for (const l of live.lines) {
+    assert(l.stations.length > 1, `Live network: line ${l.id} has no station order`);
+    assert(l.offsets.length === l.stations.length, `Live network: ${l.id} offsets misaligned`);
+    const anyRuns = Object.values(l.runs).some((r) => r['0'].length > 0 || r['1'].length > 0);
+    assert(anyRuns, `Live network: line ${l.id} has no terminus departures in any pattern`);
+  }
+  writeFileSync(join(OUT, 'live-network.json'), JSON.stringify(live));
   writeFileSync(join(OUT, 'calendar-overrides.json'), JSON.stringify(overrides));
   writeFileSync(join(OUT, 'lines.geojson'), JSON.stringify(geojson));
   writeFileSync(join(OUT, 'network.json'), JSON.stringify(network));

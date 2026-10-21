@@ -9,6 +9,7 @@
  */
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import type { LiveNetwork } from './livePositions';
 import type {
   BusesByStation, BusRoute, CalendarOverrides, FareMatrix, FareWindows, JourneyMatrix,
   NetworkStatus, Poi, PoisByStation, StationTimetable, StationsIndex, TravelPass,
@@ -73,6 +74,9 @@ export async function getFaresFrom(
 
 /** Peak windows per service pattern. */
 export const getFareWindows = () => readJson<FareWindows>('fare-windows.json');
+
+/** Scheduled train positions for the live network view. */
+export const getLiveNetwork = () => readJson<LiveNetwork>('live-network.json');
 
 /** Unlimited-travel passes, for the break-even hint. */
 export const getPasses = async (): Promise<TravelPass[]> => {
