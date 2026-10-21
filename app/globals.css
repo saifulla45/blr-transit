@@ -288,15 +288,36 @@ h1, h2, h3,
 .eyebrow { font-family: var(--font-ui), system-ui, sans-serif; }
 
 /*
-  Page entrance. Short on purpose: this is a utility, and the transition
-  must never become the slowest part of arriving somewhere.
+  Page entrance.
+
+  OPACITY ONLY, and that is load-bearing rather than a style choice.
+
+  This class wraps every page, so it is an ancestor of the pinned
+  scroll section on the landing page. Any transform on an ancestor --
+  including the identity matrix that animation-fill-mode: both leaves
+  behind after a translate -- makes position: fixed resolve against that
+  element instead of the viewport, which breaks ScrollTrigger's pin. The
+  section then scrolls away and leaves its empty spacer behind: a
+  full-screen black gap mid-page.
+
+  opacity creates a stacking context but NOT a containing block for fixed
+  positioning, so it is safe here. The lift lives on .page-lift instead,
+  applied only to pages with nothing pinned.
 */
-@keyframes route-in {
-  from { opacity: 0; transform: translateY(10px); }
+@keyframes route-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.route-enter { animation: route-fade 320ms cubic-bezier(.22, .61, .36, 1) both; }
+
+/* The lift, for pages that pin nothing. Never put this on an ancestor of
+   a pinned element — see above. */
+@keyframes page-lift {
+  from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: none; }
 }
-.route-enter { animation: route-in 380ms cubic-bezier(.22, .61, .36, 1) both; }
+.page-lift { animation: page-lift 420ms cubic-bezier(.22, .61, .36, 1) both; }
 
 @media (prefers-reduced-motion: reduce) {
-  .route-enter { animation: none; }
+  .route-enter, .page-lift { animation: none; }
 }

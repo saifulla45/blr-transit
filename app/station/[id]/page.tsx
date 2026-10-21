@@ -86,7 +86,7 @@ export default async function StationPage({ params }: { params: Promise<{ id: st
   ]);
 
   return (
-    <main className="mx-auto w-full max-w-[34rem] px-5 pb-28 md:px-8 lg:max-w-[72rem]">
+    <main className="page-lift mx-auto w-full max-w-[34rem] px-5 pb-28 md:px-8 lg:max-w-[72rem]">
       {/* A band in the station's own line colour, so the page has an identity
           the moment it loads rather than opening on undifferentiated text. */}
       <div
