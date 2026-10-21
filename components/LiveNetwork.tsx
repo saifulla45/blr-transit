@@ -80,6 +80,9 @@ export function LiveNetwork({
   // The network is wider than it is tall; a square box would waste a third
   // of the panel. Clamped so an unusual future shape cannot make it absurd.
   const boxH = Math.round(1000 * Math.min(1.25, Math.max(0.55, aspect)));
+  /** Tallest the map should ever be, and the width that implies. */
+  const MAX_H = 460;
+  const maxW = Math.round((MAX_H * 1000) / boxH);
 
   const running = now ? countRunning(net, pattern, minutes) : 0;
   const { time, meridiem } = clockParts(Math.round(minutes) % 1440);
@@ -121,11 +124,22 @@ export function LiveNetwork({
         </span>
       </header>
 
-      <div className="px-2">
+      <div className="px-2 md:flex md:items-center md:gap-5 md:px-4">
         <svg
           viewBox={`0 0 1000 ${boxH}`}
-          className="block w-full"
-          style={{ aspectRatio: `1000 / ${boxH}` }}
+          preserveAspectRatio="xMidYMid meet"
+          className="mx-auto block w-full"
+          /*
+            Both dimensions are capped, and the WIDTH is the one doing the
+            work. Unconstrained it grew to 840px tall on a desktop, where a
+            three-line schematic became the whole screen. A max-height alone
+            was not enough: width:100% wins over aspect-ratio, so the box
+            stayed full width and the drawing just letterboxed inside it
+            with empty margins. Capping max-width to the height limit times
+            the aspect keeps the drawing flush to its frame at every size,
+            while mobile still fills the column.
+          */
+          style={{ aspectRatio: `1000 / ${boxH}`, maxWidth: `${maxW}px` }}
           role="img"
           aria-label={`Schematic of the Namma Metro network with ${running} trains at their scheduled positions`}
         >
@@ -186,9 +200,15 @@ export function LiveNetwork({
             });
           })}
         </svg>
-      </div>
 
-      <div className="flex flex-wrap items-center gap-2 px-4 pt-1">
+        {/*
+          The controls move alongside the map on wide screens. Centred under
+          a 510px map in a 960px panel, the drawing looked marooned with a
+          quarter of the panel empty on either side; putting the controls in
+          that space makes the width deliberate instead of left over.
+        */}
+        <div className="px-2 pt-1 md:min-w-0 md:flex-1 md:px-0 md:pt-0">
+          <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={() => { setPlaying((p) => !p); if (scrubbed === null) setScrubbed(minutes); }}
@@ -225,13 +245,16 @@ export function LiveNetwork({
             Now
           </button>
         )}
-      </div>
+          </div>
 
-      <p className="px-4 pb-3.5 pt-1 text-[0.6875rem] leading-relaxed" style={{ color: 'var(--muted)' }}>
-        Positions are <strong>scheduled</strong>, not tracked — BMRCL publishes no live feed, so
-        nothing can show where a train actually is. At real speed a train crosses this map in
-        about an hour, which is why there is a scrubber.
-      </p>
+          <p className="text-[0.6875rem] leading-relaxed md:pt-1" style={{ color: 'var(--muted)' }}>
+            Positions are <strong>scheduled</strong>, not tracked — BMRCL publishes no live
+            feed, so nothing can show where a train actually is. At real speed a train crosses
+            this map in about an hour, which is why there is a scrubber.
+          </p>
+        </div>
+      </div>
+      <div className="pb-3" />
     </section>
   );
 }

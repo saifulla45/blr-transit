@@ -55,6 +55,11 @@ export default async function HomePage() {
             {/* Trust needs a visible way to say "this is wrong". The data is
                 open, so corrections go upstream and fix it for everyone. */}
             <Link className="underline" href="/about/#corrections">Something wrong?</Link>
+            {/* The site is a PWA: it installs to the home screen and the
+                service worker keeps it working underground. That was a popup
+                until it read as an advert for an app that does not exist on
+                any store — stated once, quietly, instead. */}
+            <span>Add to your home screen to use it offline</span>
           </p>
 
           <p>
