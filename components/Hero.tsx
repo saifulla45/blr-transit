@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import type { CalendarOverrides, NetworkStatus } from '@/types/transit';
 import Link from 'next/link';
+import { CountUp } from './CountUp';
 import { Logo } from './Logo';
 import { NetworkPulse } from './NetworkPulse';
 
@@ -111,7 +112,7 @@ export function Hero({
                   textShadow: '0 0 22px rgba(194,100,216,.45)',
                 }}
               >
-                {s.value}
+                <CountUp value={s.value} />
               </dd>
               <dd className="sr-only">{s.label}</dd>
             </div>

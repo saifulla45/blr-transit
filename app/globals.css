@@ -246,7 +246,7 @@ body {
   gets the content rather than a blank page. Because the class lands
   before first paint there is no flash of unstyled content either.
 */
-.js .reveal {
+[data-js] .reveal {
   opacity: 0;
   transform: translateY(14px);
   transition: opacity 520ms cubic-bezier(.22, .61, .36, 1),
@@ -254,7 +254,7 @@ body {
   /* Promoted up front so the first frame is not the expensive one. */
   will-change: opacity, transform;
 }
-.js .reveal.is-revealed {
+[data-js] .reveal.is-revealed {
   opacity: 1;
   transform: none;
   will-change: auto;
@@ -271,5 +271,5 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   /* Content must still arrive; only the motion goes. */
-  .js .reveal { opacity: 1; transform: none; transition: none; }
+  [data-js] .reveal { opacity: 1; transform: none; transition: none; }
 }
