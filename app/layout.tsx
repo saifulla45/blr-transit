@@ -92,21 +92,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" className={`${barlow.variable} ${plexMono.variable}`}>
       <head>
-        {/*
-          Blocking and tiny, on purpose: it marks that scripting is available
-          so the scroll-reveal CSS can hide what it is able to bring back.
-          Without it a reader with JS disabled would get a blank page.
-
-          An ATTRIBUTE, not a class. React renders className on <html>, so
-          hydration reconciles it against the server markup and silently
-          strips anything added imperatively — which is exactly what
-          happened: the script ran, the class vanished a moment later, and
-          every reveal shipped inert with transition-duration 0s. React does
-          not manage attributes it never rendered, so data-js survives.
-        */}
-        <script
-          dangerouslySetInnerHTML={{ __html: "document.documentElement.setAttribute('data-js','1')" }}
-        />
         {/* Generated from route_color; ids are sanitised and colours are
             re-emitted as #rrggbb, so no feed text reaches the stylesheet. */}
         <style dangerouslySetInnerHTML={{ __html: lineColorCss(lines) }} />

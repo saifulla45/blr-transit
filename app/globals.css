@@ -238,23 +238,21 @@ body {
   50%      { opacity: .45; transform: scale(.8); }
 }
 
+/* Scroll reveal. */
 /*
-  Scroll reveal.
-
-  The hidden state is scoped to .js — a class set by a blocking inline
-  script in the head — so anyone without JavaScript, and every crawler,
-  gets the content rather than a blank page. Because the class lands
-  before first paint there is no flash of unstyled content either.
+  Armed by the component itself, and only when it is below the fold.
+  Nothing global is relied on: a class or attribute on <html> is stripped
+  by hydration, which is how the first two attempts shipped doing nothing.
 */
-[data-js] .reveal {
+.reveal-armed {
   opacity: 0;
-  transform: translateY(14px);
-  transition: opacity 520ms cubic-bezier(.22, .61, .36, 1),
-              transform 520ms cubic-bezier(.22, .61, .36, 1);
+  transform: translateY(18px) scale(.985);
+  transition: opacity 560ms cubic-bezier(.22, .61, .36, 1),
+              transform 560ms cubic-bezier(.22, .61, .36, 1);
   /* Promoted up front so the first frame is not the expensive one. */
   will-change: opacity, transform;
 }
-[data-js] .reveal.is-revealed {
+.reveal-armed.is-revealed {
   opacity: 1;
   transform: none;
   will-change: auto;
@@ -271,5 +269,5 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   /* Content must still arrive; only the motion goes. */
-  [data-js] .reveal { opacity: 1; transform: none; transition: none; }
+  .reveal-armed { opacity: 1; transform: none; transition: none; }
 }
