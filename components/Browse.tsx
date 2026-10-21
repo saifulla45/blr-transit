@@ -12,7 +12,9 @@ import { nowInBengaluru } from '@/lib/time';
 import { useLocation } from '@/lib/useLocation';
 import { BusJourney } from './BusJourney';
 import { LastMile } from './LastMile';
+import { CinematicNetwork } from './CinematicNetwork';
 import { LiveNetwork } from './LiveNetwork';
+import { SmoothScroll } from './SmoothScroll';
 import { OutOfArea } from './OutOfArea';
 import { MetroPlanner } from './MetroPlanner';
 import { SavedStations } from './SavedStations';
@@ -167,7 +169,15 @@ export function Browse({
 
   return (
     <>
+      {/* Inertial scrolling, landing page only — it is the clock the
+          scroll-scrubbed drawing below rides on. */}
+      <SmoothScroll />
+
       <Hero network={network} overrides={overrides} stats={stats}>{controls}</Hero>
+
+      {/* The one place where scrolling is the content. Immediately after the
+          hero, before anything task-shaped. */}
+      <CinematicNetwork net={live} />
 
       {/* Results sit on the page ground, not on the photograph. */}
       {/* min-w-0 throughout: grid items default to min-width:auto, so a long
