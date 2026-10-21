@@ -5,11 +5,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import type {
   CalendarOverrides, FareWindows, Line, Station, StationLite, StationTimetable, TravelPass,
 } from '@/types/transit';
-import { fareOptions, formatRupees, isPeak, offPeakSaving, type FareTuple } from '@/lib/fares';
+import {
+  WHATSAPP_TICKET_URL, fareOptions, formatRupees, isPeak, offPeakSaving, type FareTuple,
+} from '@/lib/fares';
 import { nextDepartures } from '@/lib/departures';
 import { lastTrainToward } from '@/lib/lastTrain';
 import { clockParts, formatMinutes, nowInBengaluru, servicePatternFor } from '@/lib/time';
-import { InterchangeIcon, TicketIcon } from './icons';
+import { InterchangeIcon, TicketIcon, WhatsAppIcon } from './icons';
 import { JourneyPath } from './JourneyPath';
 import { NetworkMap } from './NetworkMap';
 import { Panel } from './Panel';
@@ -166,6 +168,34 @@ export function FareLookup({
                   now. Off-peak is before 8am, 12–4pm, after 9pm, and all day Sunday.
                 </p>
               )}
+
+              {/*
+                The next thing you do after learning the fare is buy a
+                ticket, and the page used to stop short of it. Sold on
+                convenience rather than price: the fare table directly above
+                prices QR the same as a token, so a discount claim here would
+                be contradicted by the numbers beside it.
+              */}
+              <a
+                href={WHATSAPP_TICKET_URL}
+                rel="noreferrer"
+                className="tap mt-3 flex items-center gap-2.5 px-3"
+                style={{
+                  borderRadius: 'var(--r-md)',
+                  border: '1px solid color-mix(in srgb, var(--good) 40%, transparent)',
+                  background: 'color-mix(in srgb, var(--good) 10%, transparent)',
+                }}
+              >
+                <WhatsAppIcon />
+                <span className="min-w-0 py-2">
+                  <span className="block text-[0.8125rem] font-semibold">
+                    Buy a QR ticket on WhatsApp
+                  </span>
+                  <span className="block text-[0.6875rem]" style={{ color: 'var(--muted)' }}>
+                    Skip the queue · no app to install
+                  </span>
+                </span>
+              </a>
             </div>
           )}
 

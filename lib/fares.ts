@@ -62,3 +62,22 @@ export function offPeakSaving(fare: FareTuple, peak: boolean): number | null {
   const diff = fare[1] - fare[2];
   return diff > 0 ? diff : null;
 }
+
+/**
+ * BMRCL's WhatsApp QR ticket counter.
+ *
+ * Send "Hi", pick origin and destination, pay by UPI, and the QR arrives in
+ * the chat to scan at the gate. No app install, no queue.
+ *
+ * Deliberately NOT advertised as cheaper. Secondary reporting describes a 5%
+ * WhatsApp discount, but the fares feed prices QR identically to a token --
+ * see the FareMatrix comment -- and that table is rendered directly above
+ * this link. Claiming a saving the adjacent numbers contradict is worse than
+ * claiming nothing. The smart card is where the real discount is, and the
+ * fare list already shows it.
+ *
+ * Checked 2026-10-21; wa.me resolves to api.whatsapp.com and opens the app
+ * when installed.
+ */
+export const WHATSAPP_TICKET_NUMBER = '8105556677';
+export const WHATSAPP_TICKET_URL = `https://wa.me/91${WHATSAPP_TICKET_NUMBER}?text=Hi`;
