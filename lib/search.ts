@@ -43,7 +43,14 @@ export function normalizeName(input: string): string {
     .replace(/(.)\1+/g, '$1');
 }
 
-export interface Named { name: string }
+export interface Named {
+  name: string;
+  /** Kannada name, matched as-is when the query is in Kannada script. */
+  nameKn?: string;
+}
+
+/** Any Kannada codepoint. */
+const KANNADA = /[\u0C80-\u0CFF]/;
 
 /**
  * Ranked name search. Prefix matches beat interior matches, and shorter names
@@ -52,10 +59,29 @@ export interface Named { name: string }
  */
 export function matchByName<T extends Named>(items: T[], query: string, limit = 8): T[] {
   const q = normalizeName(query);
-  if (q.length < 2) return [];
+  // A Kannada query normalises away entirely, so the length guard is applied
+  // to the raw string when the script is Kannada.
+  if (q.length < 2 && !KANNADA.test(query)) return [];
+
+  /*
+    A Kannada query is matched against the Kannada name directly.
+
+    normalizeName() exists to fold the many Latin transliterations of one
+    name together and strips anything outside [a-z0-9], so a Kannada query
+    normalises to the empty string and would otherwise match everything.
+    Kannada has no transliteration ambiguity to fold, so a plain substring
+    on the raw script is both correct and simpler.
+  */
+  const kannadaQuery = KANNADA.test(query) ? query.trim() : null;
 
   const scored: Array<{ item: T; rank: number; at: number }> = [];
   for (const item of items) {
+    if (kannadaQuery) {
+      const at = item.nameKn ? item.nameKn.indexOf(kannadaQuery) : -1;
+      if (at < 0) continue;
+      scored.push({ item, rank: at === 0 ? 0 : 1, at });
+      continue;
+    }
     const n = normalizeName(item.name);
     const at = n.indexOf(q);
     if (at < 0) continue;

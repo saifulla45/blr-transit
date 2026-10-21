@@ -108,7 +108,7 @@ export default async function AboutPage() {
           briefly, your location never leaves your device.
         </p>
 
-        <h2>Corrections</h2>
+        <h2 id="corrections">Corrections</h2>
         <p>
           Wrong timing, missing station entrance, outdated parking rate? The underlying data
           is open, and fixing it upstream fixes it for everyone — place and entrance

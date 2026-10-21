@@ -51,6 +51,12 @@ export interface StationEntrance {
 export interface StationLite {
   id: string;
   name: string;
+  /**
+   * Kannada name from the feed. Carried in the lean projection because
+   * BMRCL's own signage is bilingual, and the name you point at when asking
+   * an auto driver is this one, not the transliteration.
+   */
+  nameKn?: string;
   lat: number;
   lon: number;
   lines: LineId[];
@@ -61,6 +67,7 @@ export function toLite(s: Station): StationLite {
   return {
     id: s.id,
     name: s.name,
+    nameKn: s.nameKn,
     lat: s.lat,
     lon: s.lon,
     lines: s.lines,

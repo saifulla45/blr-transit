@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Barlow, IBM_Plex_Mono } from 'next/font/google';
 import { RegisterSW } from '@/components/RegisterSW';
+import { InstallPrompt } from '@/components/InstallPrompt';
 import { OG_IMAGE, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/site';
 import { getStationsIndex } from '@/lib/data';
 import { lineColorCss } from '@/lib/lineColors';
@@ -102,6 +103,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       >
         {children}
         <RegisterSW />
+        <InstallPrompt />
       </body>
     </html>
   );

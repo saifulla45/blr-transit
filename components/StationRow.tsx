@@ -25,6 +25,21 @@ export function StationRow({
           <span className="truncate text-[1.0625rem] font-semibold leading-tight">
             {station.name}
           </span>
+          {/*
+            BMRCL's signage is bilingual and every station in the feed has a
+            Kannada name, so this is the string that matches what is written
+            on the platform — and the one to show an auto driver. Previously
+            it appeared only on the station page heading.
+          */}
+          {station.nameKn && (
+            <span
+              className="truncate text-[0.8125rem] leading-tight"
+              style={{ color: 'var(--muted)' }}
+              lang="kn"
+            >
+              {station.nameKn}
+            </span>
+          )}
           {station.isInterchange && (
             <span className="eyebrow flex items-center gap-1" style={{ color: 'var(--accent)' }}>
               <InterchangeIcon size={13} /> Interchange

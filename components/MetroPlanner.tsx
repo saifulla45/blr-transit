@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type {
   CalendarOverrides, FareWindows, JourneyMatrix, Line, StationLite,
 } from '@/types/transit';
@@ -27,8 +28,27 @@ export function MetroPlanner({
   fareWindows: FareWindows;
   overrides: CalendarOverrides;
 }) {
-  const [from, setFrom] = useState<StationLite | null>(null);
-  const [to, setTo] = useState<StationLite | null>(null);
+  /*
+    From and to live in the URL, like the station page's planner already did.
+    A planned route survives a reload and can be sent to someone — "here is
+    your way home" is a message people actually send, and it was impossible
+    from the home page because the whole journey was local component state.
+  */
+  const router = useRouter();
+  const params = useSearchParams();
+  const byId = (id: string | null) => stations.find((s) => s.id === id) ?? null;
+
+  const [from, setFrom] = useState<StationLite | null>(() => byId(params.get('from')));
+  const [to, setTo] = useState<StationLite | null>(() => byId(params.get('to')));
+
+  // replace, not push: changing endpoints should not fill the back stack.
+  const syncUrl = useCallback((f: StationLite | null, t: StationLite | null) => {
+    const q = new URLSearchParams();
+    if (f) q.set('from', f.id);
+    if (t) q.set('to', t.id);
+    const qs = q.toString();
+    router.replace(qs ? `/?${qs}#plan` : '/', { scroll: false });
+  }, [router]);
   const [data, setData] = useState<{
     fares: Record<string, Record<string, FareTuple>>;
     journeys: JourneyMatrix;
@@ -65,8 +85,20 @@ export function MetroPlanner({
   const pattern = now ? servicePatternFor(now.date, overrides, now.weekday) : null;
   const peak = now && pattern ? isPeak(fareWindows, pattern, now.minutes) : false;
 
+  /*
+    A shared link arrives with endpoints already set, but nothing has tapped
+    a picker, so the fare and journey matrices were never fetched and the
+    page showed two filled boxes and no answer.
+  */
+  useEffect(() => {
+    if (from || to) ensureData();
+    // Intentionally mount-only: later changes go through the pickers, which
+    // call ensureData themselves.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
-    <section className="min-w-0 md:col-span-2">
+    <section id="plan" className="min-w-0 scroll-mt-4 md:col-span-2">
       <h2 className="eyebrow flex items-center gap-1.5 pb-2">
         <TicketIcon size={14} /> Plan a metro trip
       </h2>
@@ -76,7 +108,7 @@ export function MetroPlanner({
           stations={stations.filter((s) => s.id !== to?.id)}
           lines={lines}
           value={from}
-          onSelect={(s) => { setFrom(s); if (s) ensureData(); }}
+          onSelect={(s) => { setFrom(s); syncUrl(s, to); if (s) ensureData(); }}
           placeholder="From…"
           label="Start station"
         />
@@ -84,7 +116,7 @@ export function MetroPlanner({
           stations={stations.filter((s) => s.id !== from?.id)}
           lines={lines}
           value={to}
-          onSelect={(s) => { setTo(s); if (s) ensureData(); }}
+          onSelect={(s) => { setTo(s); syncUrl(from, s); if (s) ensureData(); }}
           placeholder="To…"
           label="Destination station"
         />

@@ -48,6 +48,9 @@ export default async function HomePage() {
             <Link className="underline" href="/about/">About &amp; data sources</Link>
             <Link className="underline" href="/privacy/">Privacy</Link>
             <Link className="underline" href="/map/">Network map</Link>
+            {/* Trust needs a visible way to say "this is wrong". The data is
+                open, so corrections go upstream and fix it for everyone. */}
+            <Link className="underline" href="/about/#corrections">Something wrong?</Link>
           </p>
 
           <p>

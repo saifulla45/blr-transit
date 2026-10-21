@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import {
   toLite,
   type CalendarOverrides, type FareWindows, type Line, type LineId, type NetworkStatus,
@@ -216,12 +216,16 @@ export function Browse({
 
         {/* Metro A-to-B from the home page: buses already answered this here,
             and making people open a station page first was an odd asymmetry. */}
-        <MetroPlanner
-          stations={stationsLite}
-          lines={lines}
-          fareWindows={fareWindows}
-          overrides={overrides}
-        />
+        {/* useSearchParams bails out of prerendering without a boundary;
+            the station page wraps its planner for the same reason. */}
+        <Suspense fallback={null}>
+          <MetroPlanner
+            stations={stationsLite}
+            lines={lines}
+            fareWindows={fareWindows}
+            overrides={overrides}
+          />
+        </Suspense>
 
         {/* Buses are the other half of "how do I get there from here", so the
             journey search sits right under the nearest stations rather than
