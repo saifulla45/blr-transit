@@ -92,6 +92,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" className={`${barlow.variable} ${plexMono.variable}`}>
       <head>
+        {/*
+          Blocking and tiny, on purpose. It marks that scripting is available
+          so the scroll-reveal CSS can hide things it is able to bring back.
+          Without it a reader with JS disabled would get a blank page.
+        */}
+        <script
+          dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }}
+        />
         {/* Generated from route_color; ids are sanitised and colours are
             re-emitted as #rrggbb, so no feed text reaches the stylesheet. */}
         <style dangerouslySetInnerHTML={{ __html: lineColorCss(lines) }} />

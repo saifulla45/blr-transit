@@ -12,6 +12,7 @@ import { NearbyPanel } from '@/components/NearbyPanel';
 import { ParkingPanel } from '@/components/ParkingPanel';
 import { SectionNav } from '@/components/SectionNav';
 import { Credit } from '@/components/Credit';
+import { Reveal } from '@/components/Reveal';
 import { SaveButton } from '@/components/SaveButton';
 import { StationFacts } from '@/components/StationFacts';
 import { StationMap } from '@/components/StationMap';
@@ -159,8 +160,13 @@ export default async function StationPage({ params }: { params: Promise<{ id: st
         Putting all five in source order would leave one column stranded.
       */}
       <div className="flex flex-col gap-4 pt-3 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5">
+        {/*
+          Panels arrive as you reach them, staggered within each column.
+          The delays are small and only inside a column — a long cascade
+          down a page you are already reading is an obstacle, not a flourish.
+        */}
         <div className="flex min-w-0 flex-col gap-4 lg:gap-5">
-          <Suspense fallback={null}><FareLookup
+          <Reveal><Suspense fallback={null}><FareLookup
             origin={station}
             stations={stationsLite}
             lines={lines}
@@ -170,27 +176,31 @@ export default async function StationPage({ params }: { params: Promise<{ id: st
             overrides={overrides}
             timetable={timetable}
             passes={passes}
-          /></Suspense>
-          <EntrancesPanel station={station} />
-          <NearbyPanel pois={pois} stationName={station.name} />
+          /></Suspense></Reveal>
+          <Reveal delay={60}><EntrancesPanel station={station} /></Reveal>
+          <Reveal delay={120}><NearbyPanel pois={pois} stationName={station.name} /></Reveal>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 lg:gap-5">
-          <BusesPanel buses={buses} stationName={station.name} />
-          <div id="departures" className="scroll-mt-16">
-            <DepartureBoard
-              timetable={timetable}
-              overrides={overrides}
-              lines={lines}
-              fareWindows={fareWindows}
+          <Reveal><BusesPanel buses={buses} stationName={station.name} /></Reveal>
+          <Reveal delay={60}>
+            <div id="departures" className="scroll-mt-16">
+              <DepartureBoard
+                timetable={timetable}
+                overrides={overrides}
+                lines={lines}
+                fareWindows={fareWindows}
+              />
+            </div>
+          </Reveal>
+          <Reveal delay={120}>
+            <ParkingPanel
+              station={station}
+              maxTwoWheeler={maxTwoWheeler}
+              maxFourWheeler={maxFourWheeler}
             />
-          </div>
-          <ParkingPanel
-            station={station}
-            maxTwoWheeler={maxTwoWheeler}
-            maxFourWheeler={maxFourWheeler}
-          />
-          <StationMap station={station} lines={lines} pois={pois} />
+          </Reveal>
+          <Reveal delay={180}><StationMap station={station} lines={lines} pois={pois} /></Reveal>
         </div>
       </div>
 

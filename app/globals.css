@@ -237,3 +237,39 @@ body {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%      { opacity: .45; transform: scale(.8); }
 }
+
+/*
+  Scroll reveal.
+
+  The hidden state is scoped to .js — a class set by a blocking inline
+  script in the head — so anyone without JavaScript, and every crawler,
+  gets the content rather than a blank page. Because the class lands
+  before first paint there is no flash of unstyled content either.
+*/
+.js .reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 520ms cubic-bezier(.22, .61, .36, 1),
+              transform 520ms cubic-bezier(.22, .61, .36, 1);
+  /* Promoted up front so the first frame is not the expensive one. */
+  will-change: opacity, transform;
+}
+.js .reveal.is-revealed {
+  opacity: 1;
+  transform: none;
+  will-change: auto;
+}
+
+/* Split-flap. The character is swapped at the midpoint, where the flap is
+   edge-on, so the change itself is never seen. */
+@keyframes flap {
+  0%   { transform: rotateX(0deg);   }
+  49%  { transform: rotateX(-90deg); }
+  51%  { transform: rotateX(90deg);  }
+  100% { transform: rotateX(0deg);   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Content must still arrive; only the motion goes. */
+  .js .reveal { opacity: 1; transform: none; transition: none; }
+}

@@ -5,9 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import type {
   CalendarOverrides, FareWindows, JourneyMatrix, Line, StationLite,
 } from '@/types/transit';
-import { fareOptions, formatRupees, isPeak, type FareTuple } from '@/lib/fares';
+import {
+  WHATSAPP_TICKET_URL, fareOptions, formatRupees, isPeak, type FareTuple,
+} from '@/lib/fares';
 import { nowInBengaluru, servicePatternFor } from '@/lib/time';
-import { InterchangeIcon, TicketIcon } from './icons';
+import { InterchangeIcon, TicketIcon, WhatsAppIcon } from './icons';
 import { JourneyPath } from './JourneyPath';
 import { StationPicker } from './StationPicker';
 
@@ -162,7 +164,36 @@ export function MetroPlanner({
             <span>· {journey[3].length} stations</span>
           </p>
 
-          <JourneyPath path={journey[3]} stations={stations} />
+          {/*
+            Buying a ticket has to be reachable wherever the fare is shown.
+            This panel quoted a price and offered no way to act on it, so
+            anyone planning from the home page had to find a station page
+            first. Same link and same wording as the station panel.
+          */}
+          <a
+            href={WHATSAPP_TICKET_URL}
+            rel="noreferrer"
+            className="tap mt-3 flex items-center gap-2.5 px-3"
+            style={{
+              borderRadius: 'var(--r-md)',
+              border: '1px solid color-mix(in srgb, var(--good) 40%, transparent)',
+              background: 'color-mix(in srgb, var(--good) 10%, transparent)',
+            }}
+          >
+            <WhatsAppIcon />
+            <span className="min-w-0 py-2">
+              <span className="block text-[0.8125rem] font-semibold">
+                Buy a QR ticket on WhatsApp
+              </span>
+              <span className="block text-[0.6875rem]" style={{ color: 'var(--muted)' }}>
+                Skip the queue · no app to install
+              </span>
+            </span>
+          </a>
+
+          <div className="mt-4">
+            <JourneyPath path={journey[3]} stations={stations} />
+          </div>
         </div>
       )}
     </section>

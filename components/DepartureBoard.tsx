@@ -7,6 +7,7 @@ import { nextDepartures, type DirectionGroup } from '@/lib/departures';
 import {
   clockParts, formatMinutes, formatRelative, nowInBengaluru, servicePatternFor,
 } from '@/lib/time';
+import { FlipTime } from './FlipTime';
 import { lineVar, Rail } from './primitives';
 import { TrainIcon } from './icons';
 import { Panel } from './Panel';
@@ -129,11 +130,17 @@ function DirectionBlock({
         {next && (
           // The single number you are squinting at: the largest thing on the page.
           <div className="mt-2 flex items-baseline gap-3">
-            <span
-              className="num text-[2.5rem] font-semibold leading-none tracking-tight"
-              style={{ fontFamily: 'var(--font-mono), monospace' }}
-            >
-              {clockParts(next.scheduled).time}
+            <span className="num text-[2.5rem] font-semibold leading-none tracking-tight">
+              {/*
+                Split-flap, because that is what the board above the platform
+                does. The motion is not decoration: a flap turns exactly when
+                that digit changes, so movement here means a departure has
+                actually moved on.
+              */}
+              <FlipTime
+                value={clockParts(next.scheduled).time}
+                ariaLabel={`${clockParts(next.scheduled).time} ${clockParts(next.scheduled).meridiem}`}
+              />
               <span className="ml-1 text-[1rem] font-medium" style={{ color: 'var(--muted)' }}>
                 {clockParts(next.scheduled).meridiem}
               </span>
