@@ -37,6 +37,19 @@ export default async function HomePage() {
           className="safe-bottom mt-10 pt-5 text-[0.75rem] leading-relaxed"
           style={{ borderTop: '1px solid var(--rule)', color: 'var(--muted)' }}
         >
+          {/*
+            Credit and navigation first, licence text last. Reversed, the
+            byline landed after three paragraphs of attribution where nobody
+            scrolled far enough to read it.
+          */}
+          <p className="pb-3"><Credit /></p>
+
+          <p className="flex flex-wrap gap-x-4 gap-y-1 pb-4">
+            <Link className="underline" href="/about/">About &amp; data sources</Link>
+            <Link className="underline" href="/privacy/">Privacy</Link>
+            <Link className="underline" href="/map/">Network map</Link>
+          </p>
+
           <p>
             Parking capacity for {withParking} of {stations.length} stations, from BMRCL. Train
             times are <strong>scheduled</strong>, from BMRCL&rsquo;s published timetable (feed{' '}
@@ -59,12 +72,6 @@ export default async function HomePage() {
             </a>{' '}
             by Fly2Blue, CC0.
           </p>
-          <p className="mt-4 flex flex-wrap gap-x-4 gap-y-1">
-            <Link className="underline" href="/about/">About &amp; data sources</Link>
-            <Link className="underline" href="/privacy/">Privacy</Link>
-            <Link className="underline" href="/map/">Network map</Link>
-          </p>
-          <p className="mt-3"><Credit /></p>
         </footer>
       </section>
     </main>

@@ -11,7 +11,6 @@ import { LineStrip } from '@/components/LineStrip';
 import { NearbyPanel } from '@/components/NearbyPanel';
 import { ParkingPanel } from '@/components/ParkingPanel';
 import { SectionNav } from '@/components/SectionNav';
-import { RecordVisit } from '@/components/RecordVisit';
 import { Credit } from '@/components/Credit';
 import { SaveButton } from '@/components/SaveButton';
 import { StationFacts } from '@/components/StationFacts';
@@ -195,7 +194,6 @@ export default async function StationPage({ params }: { params: Promise<{ id: st
         </div>
       </div>
 
-      <RecordVisit stationId={station.id} />
       <StickyNextTrain timetable={timetable} overrides={overrides} stationName={station.name} />
 
       <footer

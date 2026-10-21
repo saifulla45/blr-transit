@@ -13,7 +13,6 @@ import { BusJourney } from './BusJourney';
 import { LastMile } from './LastMile';
 import { OutOfArea } from './OutOfArea';
 import { MetroPlanner } from './MetroPlanner';
-import { RecentStations } from './RecentStations';
 import { SavedStations } from './SavedStations';
 import { Hero } from './Hero';
 import { StationRow } from './StationRow';
@@ -173,7 +172,6 @@ export function Browse({
           horizontally on narrow screens. */}
       <div className="mx-auto grid w-full max-w-[64rem] gap-9 px-5 pt-9 md:grid-cols-2 md:gap-x-10 md:px-8 md:pt-11">
         <SavedStations stations={stations} lines={lines} />
-        <RecentStations stations={stations} lines={lines} />
 
         {state.status === 'ready' && outOfArea && (
           <OutOfArea nearestStationKm={nearest[0].distanceKm} />
