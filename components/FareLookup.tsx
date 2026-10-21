@@ -7,6 +7,7 @@ import type {
 } from '@/types/transit';
 import { fareOptions, formatRupees, isPeak, offPeakSaving, type FareTuple } from '@/lib/fares';
 import { nextDepartures } from '@/lib/departures';
+import { lastTrainToward } from '@/lib/lastTrain';
 import { clockParts, formatMinutes, nowInBengaluru, servicePatternFor } from '@/lib/time';
 import { InterchangeIcon, TicketIcon } from './icons';
 import { JourneyPath } from './JourneyPath';
@@ -57,6 +58,8 @@ export function FareLookup({
   const fare = destId ? fares[destId] : undefined;
   const journey = destId ? journeys[destId] : undefined;
   const options = stations.filter((s) => s.id !== origin.id);
+  // Headsigns name stations; line.order holds ids. This bridges the two.
+  const byId = new Map(stations.map((s) => [s.id, s]));
 
   const pattern = now ? servicePatternFor(now.date, overrides, now.weekday) : null;
   const peak = now && pattern ? isPeak(fareWindows, pattern, now.minutes) : false;
@@ -67,8 +70,16 @@ export function FareLookup({
     : [];
   const nextOut = groups.map((g) => g.upcoming[0]).filter(Boolean)
     .sort((a, b) => a.inMinutes - b.inMinutes)[0];
-  const lastOut = groups.length
-    ? Math.max(...groups.map((g) => g.lastTrain))
+  /*
+    The last train GOING YOUR WAY, not the last train from this platform.
+
+    This was Math.max over every direction, which at an interchange is the
+    latest train on any line to anywhere. From Majestic that is always 23:37,
+    while the last train to Challaghatta is 23:19 — eighteen minutes of false
+    reassurance, which is a missed last train.
+  */
+  const lastOut = journey
+    ? lastTrainToward(journey[3], journey[2], groups, lines, (id) => byId.get(id)?.name)
     : null;
 
   return (
@@ -177,10 +188,21 @@ export function FareLookup({
                 </strong>
                 .
               </p>
-              {lastOut !== null && (
+              {lastOut && (
                 <p className="mt-1.5 text-[0.75rem]" style={{ color: 'var(--muted)' }}>
-                  Last train from {origin.name} is {formatMinutes(lastOut)}
-                  {journey[2] > 0 && ' — with a change of line, leave earlier than that'}.
+                  Last train towards {dest?.name ?? 'there'} leaves{' '}
+                  <strong style={{ color: 'var(--ink)' }}>{formatMinutes(lastOut.minutes)}</strong>
+                  {/* The headsign only adds anything when it is NOT the
+                      destination — otherwise it reads "towards Challaghatta
+                      (towards Challaghatta)". It is the platform sign you
+                      look for, so it earns its place on every other route. */}
+                  {lastOut.headsign !== dest?.name && <> (the {lastOut.headsign} train)</>}
+                  {/* Said plainly rather than implied: the second leg's
+                      timetable is not on this page, so the connection is not
+                      something this figure can vouch for. */}
+                  {lastOut.viaInterchange
+                    && ' — you change lines on this route, so leave earlier and check the connection'}
+                  .
                 </p>
               )}
             </div>
