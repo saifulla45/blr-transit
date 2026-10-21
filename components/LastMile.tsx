@@ -6,13 +6,21 @@ import { directionsUrl } from '@/lib/maps';
 import type { Station } from '@/types/transit';
 
 /**
- * How to reach the nearest station: walk, or what a ride should cost.
+ * How to reach the nearest station.
  *
- * The design problem here is credibility. Every app price is an estimate
- * against demand pricing nobody can predict; exactly one figure — the auto
- * meter — is a published legal rate. Listing them together as equals would
- * launder the guesswork into fact, so the meter stands alone above the apps
- * in the accent colour, and every app price wears a range.
+ * Two completely different answers, not one card with a toggle.
+ *
+ * Within 700m there is nothing to decide: walk, and here are the
+ * directions. Offering a 100 rupee cab for a 52 metre stroll — which this
+ * did — is not merely redundant, it makes every other figure on the page
+ * look unconsidered. One bad number discredits the good ones.
+ *
+ * Beyond 700m the question is real, and then credibility is the design
+ * problem. Every app price is an estimate against demand pricing nobody
+ * can predict; exactly one figure, the auto meter, is a published legal
+ * rate. Listing them as equals would launder guesswork into fact, so the
+ * meter stands alone in the accent colour and every app price wears a
+ * range.
  */
 export function LastMile({
   station, distanceKm, minutesSinceMidnight,
@@ -23,9 +31,46 @@ export function LastMile({
   minutesSinceMidnight: number;
 }) {
   const hour = Math.floor(minutesSinceMidnight / 60);
+  const walkable = distanceKm <= WALKABLE_KM;
+  const walkHref = directionsUrl(station.lat, station.lon, `${station.name} Metro Station`);
+
+  if (walkable) {
+    return (
+      <section
+        className="stop-in min-w-0"
+        style={{
+          borderRadius: 'calc(var(--r-md) * 2)',
+          background: 'var(--surface)',
+          border: '1px solid var(--rule)',
+        }}
+      >
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3.5">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-[0.9375rem] font-semibold">Walk to {station.name}</h2>
+            <p className="mt-0.5 text-[0.8125rem]" style={{ color: 'var(--muted)' }}>
+              {formatDistance(distanceKm)} · about {walkingMinutes(distanceKm)} min on foot.
+            </p>
+          </div>
+          <a
+            href={walkHref}
+            rel="noreferrer"
+            className="tap inline-flex shrink-0 items-center gap-1.5 px-3.5 text-[0.875rem] font-semibold"
+            style={{
+              borderRadius: 'var(--r-md)',
+              background: 'var(--accent)',
+              color: 'var(--on-accent)',
+              lineHeight: '44px',
+            }}
+          >
+            Walking directions
+          </a>
+        </div>
+      </section>
+    );
+  }
+
   const meter = rideOptions(distanceKm, hour).find((o) => o.exact)!;
   const apps = rideApps(distanceKm, hour, station.lat, station.lon, station.name);
-  const walkable = distanceKm <= WALKABLE_KM;
 
   return (
     <section
@@ -41,15 +86,8 @@ export function LastMile({
           Getting to {station.name}
         </h2>
         <p className="mt-0.5 text-[0.8125rem]" style={{ color: 'var(--muted)' }}>
-          {/*
-            Recommending a ₹49 auto for a two-minute walk would be absurd, so
-            when it is walkable the walk leads and the fares are the
-            alternative — rather than hiding the fares, which is what this
-            card used to do.
-          */}
-          {walkable
-            ? <>{formatDistance(distanceKm)} · about {walkingMinutes(distanceKm)} min walk. Or ride:</>
-            : <>{formatDistance(distanceKm)} away — further than most people want to walk.</>}
+          {formatDistance(distanceKm)} away, about {walkingMinutes(distanceKm)} min on foot —
+          further than most people want to walk.
         </p>
       </header>
 
@@ -149,12 +187,12 @@ export function LastMile({
             a Google Maps universal link, and the handoff to the Maps app is
             reliable on a top-level navigation. */}
         <a
-          href={directionsUrl(station.lat, station.lon, `${station.name} Metro Station`)}
+          href={walkHref}
           rel="noreferrer"
           className="mt-2.5 inline-flex text-[0.8125rem] font-medium underline underline-offset-2"
           style={{ color: 'var(--accent)' }}
         >
-          {walkable ? 'Walking directions' : 'Walking directions instead'}
+          Walking directions instead
         </a>
       </div>
 

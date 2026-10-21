@@ -264,7 +264,15 @@ export function rideApps(
 }
 
 /**
- * Below this the answer is "walk" and a ride card would be noise.
- * 1 km is roughly a 15 minute walk at the padded pace used elsewhere.
+ * Below this the answer is simply "walk", and fares are noise.
+ *
+ * 700m, about an 11 minute walk at the padded pace used here. Set from the
+ * real complaint: at 1km the card offered a 100 rupee cab for a 52 metre,
+ * one minute walk, which nobody would book and which made every other
+ * number on the card look unconsidered too.
+ *
+ * Erring high would be the worse mistake. Showing a fare nobody needs
+ * costs credibility on the whole card; omitting one for a 750m walk costs
+ * a tap on an app the reader already has.
  */
-export const WALKABLE_KM = 1;
+export const WALKABLE_KM = 0.7;
