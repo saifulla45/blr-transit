@@ -271,3 +271,32 @@ body {
   /* Content must still arrive; only the motion goes. */
   .reveal-armed { opacity: 1; transform: none; transition: none; }
 }
+
+/*
+  Display face on the things that carry the page: the hero headline, every
+  panel and section heading, and the large figures. Body text stays on the
+  UI face, which is the one tuned for reading a phone at arm's length.
+*/
+h1, h2, h3,
+.display {
+  font-family: var(--font-display), var(--font-ui), system-ui, sans-serif;
+  letter-spacing: -0.015em;
+}
+
+/* Bricolage runs wide at small sizes; the eyebrow stays on the UI face so
+   the uppercase tracking does not fight it. */
+.eyebrow { font-family: var(--font-ui), system-ui, sans-serif; }
+
+/*
+  Page entrance. Short on purpose: this is a utility, and the transition
+  must never become the slowest part of arriving somewhere.
+*/
+@keyframes route-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+.route-enter { animation: route-in 380ms cubic-bezier(.22, .61, .36, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .route-enter { animation: none; }
+}

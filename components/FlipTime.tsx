@@ -14,9 +14,17 @@ import { useEffect, useRef, useState } from 'react';
  * which is why "3:16" ticking to "3:17" turns a single flap instead of the
  * whole display twitching.
  *
- * The digits are monospace and each flap has a fixed width, so nothing
- * reflows as values change — a count that nudges the layout every minute is
- * worse than no animation.
+ * Set in the UI face with tabular figures, NOT the monospace used for dense
+ * columns of times elsewhere. Monospace gives every glyph the same advance,
+ * including the colon, so at display size "5:17" reads as "5 : 17" — the
+ * same fault the hero stats had. Forcing a narrower box on the colon made
+ * it worse rather than better: the glyph still advanced 24.4px inside an
+ * 11.8px box, overflowing six pixels each side, which left a gap after the
+ * 5 and collided with the 1.
+ *
+ * Tabular figures solve the real requirement — every DIGIT the same width,
+ * so nothing reflows as the time ticks — while leaving punctuation its
+ * natural, narrow advance.
  */
 export function FlipTime({
   value,
@@ -33,7 +41,10 @@ export function FlipTime({
   return (
     <span
       className={`inline-flex items-baseline ${className}`}
-      style={{ fontFamily: 'var(--font-mono), monospace' }}
+      // The family is set here, not inherited: an ancestor applies the
+      // mono face for dense time columns, which is the wrong choice at
+      // display size where its full-cell colon reads as "5 : 17".
+      style={{ fontFamily: 'var(--font-ui), system-ui, sans-serif', fontVariantNumeric: 'tabular-nums' }}
       aria-label={ariaLabel ?? value}
       role="text"
     >
@@ -71,10 +82,9 @@ function Flap({ char }: { char: string }) {
     <span
       aria-hidden
       className="inline-block"
+      // No width override. Tabular figures already give every digit the
+      // same advance, and the colon keeps its own narrow one.
       style={{
-        // Digits are fixed-width so the row cannot reflow; a colon is narrow.
-        width: isDigit ? '0.62em' : '0.3em',
-        textAlign: 'center',
         animation: flipping && isDigit ? 'flap 240ms ease-in-out' : undefined,
         transformOrigin: 'center bottom',
         backfaceVisibility: 'hidden',

@@ -1,14 +1,35 @@
 import type { Metadata, Viewport } from 'next';
-import { Barlow, IBM_Plex_Mono } from 'next/font/google';
+import { Bricolage_Grotesque, IBM_Plex_Mono, Plus_Jakarta_Sans } from 'next/font/google';
 import { RegisterSW } from '@/components/RegisterSW';
+import { RouteTransition } from '@/components/RouteTransition';
 import { OG_IMAGE, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/site';
 import { getStationsIndex } from '@/lib/data';
 import { lineColorCss } from '@/lib/lineColors';
 import './globals.css';
 
-// Barlow is a grotesk drawn from public-signage lettering — the vernacular this
-// app actually lives in. next/font self-hosts it, so no CDN request at runtime.
-const barlow = Barlow({
+/*
+  Three faces, each with a job.
+
+  Bricolage Grotesque for display. It carries real personality — slightly
+  condensed, with an unusual tension in the curves — which is what stops a
+  transit site reading like a spreadsheet, and its optical sizing axis keeps
+  the headline tight at 68px without getting airy at 24px.
+
+  Plus Jakarta Sans for everything you actually read. Open apertures and a
+  tall x-height, which is what matters on a phone held at arm's length on a
+  platform in daylight. Replaces Barlow, which was chosen for its signage
+  heritage but is plain at body size.
+
+  Both self-hosted by next/font, so no CDN request and no layout shift.
+*/
+const display = Bricolage_Grotesque({
+  subsets: ['latin'],
+  weight: ['600', '700', '800'],
+  variable: '--font-display',
+  display: 'swap',
+});
+
+const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-ui',
@@ -90,7 +111,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const { lines } = await getStationsIndex();
 
   return (
-    <html lang="en" className={`${barlow.variable} ${plexMono.variable}`}>
+    <html lang="en" className={`${display.variable} ${jakarta.variable} ${plexMono.variable}`}>
       <head>
         {/* Generated from route_color; ids are sanitised and colours are
             re-emitted as #rrggbb, so no feed text reaches the stylesheet. */}
@@ -100,7 +121,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         className="min-h-[100dvh]"
         style={{ fontFamily: 'var(--font-ui), ui-sans-serif, system-ui, sans-serif' }}
       >
-        {children}
+        <RouteTransition>{children}</RouteTransition>
         <RegisterSW />
       </body>
     </html>
