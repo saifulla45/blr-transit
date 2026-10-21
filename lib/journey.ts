@@ -8,7 +8,7 @@
  * or it does not, which the stop sequences answer correctly.
  */
 import type { BusNetwork, DirectBus } from '@/types/transit';
-import { normalizeName } from './search';
+import { normalizeName, similarity } from './search';
 
 const EARTH_RADIUS_M = 6_371_000;
 
@@ -146,21 +146,6 @@ export function searchStops(network: BusNetwork, query: string, limit = 10): Nea
     differ, and because it stays cheap over 9,000 names.
   */
   return fuzzyStops(network, needle, limit);
-}
-
-/** Dice coefficient over character trigrams. */
-function similarity(a: string, b: string): number {
-  if (a.length < 3 || b.length < 3) return a === b ? 1 : 0;
-  const grams = (x: string) => {
-    const set = new Set<string>();
-    for (let i = 0; i < x.length - 2; i += 1) set.add(x.slice(i, i + 3));
-    return set;
-  };
-  const A = grams(a);
-  const B = grams(b);
-  let shared = 0;
-  for (const g of A) if (B.has(g)) shared += 1;
-  return (2 * shared) / (A.size + B.size);
 }
 
 /** Close-enough matches, used only when nothing matched literally. */
