@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import { Barlow, IBM_Plex_Mono } from 'next/font/google';
 import { RegisterSW } from '@/components/RegisterSW';
 import { OG_IMAGE, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/site';
+import { getStationsIndex } from '@/lib/data';
+import { lineColorCss } from '@/lib/lineColors';
 import './globals.css';
 
 // Barlow is a grotesk drawn from public-signage lettering — the vernacular this
@@ -75,9 +77,25 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  /*
+    Line colours come from the feed, not from globals.css.
+
+    Emitted here so all 14 lineVar() call sites resolve without threading the
+    lines array through every component, and so the day BMRCL's Blue and Pink
+    lines appear in the GTFS they get their own colours with no code change.
+    Previously lineVar() fell through to yellow for any unrecognised line,
+    which would have painted both new lines yellow with no error.
+  */
+  const { lines } = await getStationsIndex();
+
   return (
     <html lang="en" className={`${barlow.variable} ${plexMono.variable}`}>
+      <head>
+        {/* Generated from route_color; ids are sanitised and colours are
+            re-emitted as #rrggbb, so no feed text reaches the stylesheet. */}
+        <style dangerouslySetInnerHTML={{ __html: lineColorCss(lines) }} />
+      </head>
       <body
         className="min-h-[100dvh]"
         style={{ fontFamily: 'var(--font-ui), ui-sans-serif, system-ui, sans-serif' }}

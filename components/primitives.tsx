@@ -1,10 +1,19 @@
 import type { Line, LineId, Station } from '@/types/transit';
 
-/** Maps a line to its CSS custom property, so themes swap both at once. */
+/**
+ * The CSS variable holding this line's colour.
+ *
+ * Data-driven: the variables are emitted in the document head from the
+ * feed's own route_color (see lib/lineColors.ts), so a line BMRCL has not
+ * opened yet resolves correctly the day it appears in the feed. This used to
+ * be a two-branch conditional that fell through to yellow, which would have
+ * silently painted both the Blue and Pink lines yellow.
+ *
+ * The fallback is deliberately a neutral grey rather than another line's
+ * colour: an unstyled line should look unstyled, not like the Green line.
+ */
 export function lineVar(line: LineId): string {
-  return line === 'PURPLE' ? 'var(--line-purple)'
-    : line === 'GREEN' ? 'var(--line-green)'
-    : 'var(--line-yellow)';
+  return `var(--line-${line}, #6b6b6b)`;
 }
 
 export function lineName(line: LineId, lines: Line[]): string {
