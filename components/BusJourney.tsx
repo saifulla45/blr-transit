@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { BusNetwork, DirectBus } from '@/types/transit';
 import {
-  findDirectBuses, nearestStops, searchStops, stopIdsNamed, type NearbyStop,
+  findChangeJourneys, findDirectBuses, nearestStops, searchStops, stopsInLocality,
+  type ChangeJourney, type NearbyStop,
 } from '@/lib/journey';
 import { BusIcon, PinIcon } from './icons';
 
@@ -77,18 +78,35 @@ export function BusJourney({ lat, lon }: { lat: number; lon: number }) {
   const fromStop = near.find((s) => s.id === fromId) ?? near[0] ?? null;
 
   const destMatches = useMemo(
-    () => (network && destQuery.trim() && !dest ? searchStops(network, destQuery) : []),
+    /*
+      Fifteen rather than eight, in a scrolling list. Three or four letters
+      is how people actually search — "heb", "kora", "btm" — and that
+      returns a genuine shortlist of real stops, which is far easier than
+      guessing BMTC's exact spelling. Truncating it to a handful threw away
+      the ones further down the alphabet for no reason.
+    */
+    () => (network && destQuery.trim() && !dest ? searchStops(network, destQuery, 15) : []),
     [network, destQuery, dest],
   );
 
-  const buses: DirectBus[] = useMemo(() => {
-    if (!network || !fromStop || !dest) return [];
-    // Match on name so both directions of a stop count as the same place.
-    return findDirectBuses(
-      network,
-      stopIdsNamed(network, fromStop.name),
-      stopIdsNamed(network, dest.name),
-    );
+  /*
+    Matched by locality, not by exact stop name.
+
+    Exact names reported "no direct bus" from Garudacharpalya to Hebbala
+    while twelve routes ran it, because BMTC names the stops around one
+    junction separately and those routes call at "Hebbala Bridge". Same
+    search, same data, 0 results became 7.
+  */
+  const { buses, changes } = useMemo(() => {
+    if (!network || !fromStop || !dest) return { buses: [] as DirectBus[], changes: [] as ChangeJourney[] };
+    const fromIds = stopsInLocality(network, fromStop);
+    const toIds = stopsInLocality(network, dest);
+    const direct = findDirectBuses(network, fromIds, toIds);
+    // Only worth computing when nothing runs the whole way.
+    return {
+      buses: direct,
+      changes: direct.length === 0 ? findChangeJourneys(network, fromIds, toIds) : [],
+    };
   }, [network, fromStop, dest]);
 
   if (failed) {
@@ -153,7 +171,16 @@ export function BusJourney({ lat, lon }: { lat: number; lon: number }) {
             }}
           />
           {destMatches.length > 0 && (
-            <ul className="mt-1.5 overflow-hidden" style={{ borderRadius: 'var(--r-md)', border: '1px solid var(--rule)' }}>
+            <ul
+              className="mt-1.5 overflow-y-auto"
+              style={{
+                borderRadius: 'var(--r-md)',
+                border: '1px solid var(--rule)',
+                // Roughly six rows before it scrolls, so a long list never
+                // pushes the results off the screen.
+                maxHeight: '17rem',
+              }}
+            >
               {destMatches.map((s) => (
                 <li key={s.id}>
                   <button
@@ -174,10 +201,46 @@ export function BusJourney({ lat, lon }: { lat: number; lon: number }) {
       {dest && fromStop && (
         <div className="mt-5">
           {buses.length === 0 ? (
-            <p className="text-[0.875rem]" style={{ color: 'var(--muted)' }}>
-              No <strong>direct</strong> bus from {fromStop.name} to {dest.name}. You would need to
-              change buses — this search only finds single-bus journeys.
-            </p>
+            /*
+              "No direct bus" was a dead end, and in a city this size it is
+              also the common answer. The useful next sentence is which two
+              buses to take, so the change options are shown rather than
+              described.
+            */
+            <>
+              <p className="pb-3 text-[0.875rem]" style={{ color: 'var(--muted)' }}>
+                No <strong>direct</strong> bus from {fromStop.name} to {dest.name}
+                {changes.length > 0 ? ' — but you can get there with one change:' : '.'}
+              </p>
+              {changes.length > 0 && (
+                <ul>
+                  {changes.map((c) => (
+                    <li
+                      key={`${c.first.routeId}-${c.second.routeId}-${c.changeAt}`}
+                      className="py-3"
+                      style={{ borderTop: '1px solid var(--rule)' }}
+                    >
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                        <RouteTag name={c.first.name} />
+                        <span className="text-[0.75rem]" style={{ color: 'var(--muted)' }}>
+                          {c.first.stopCount} stops
+                        </span>
+                        <span aria-hidden style={{ color: 'var(--muted)' }}>→</span>
+                        <span className="text-[0.8125rem] font-medium">{c.changeAt}</span>
+                        <span aria-hidden style={{ color: 'var(--muted)' }}>→</span>
+                        <RouteTag name={c.second.name} />
+                        <span className="text-[0.75rem]" style={{ color: 'var(--muted)' }}>
+                          {c.second.stopCount} stops
+                        </span>
+                      </div>
+                      <p className="pt-1 text-[0.75rem]" style={{ color: 'var(--muted)' }}>
+                        Change at <strong>{c.changeAt}</strong> · {c.totalStops} stops in total
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
           ) : (
             <>
               <p className="eyebrow pb-2">
@@ -265,3 +328,20 @@ function Shell({
 }
 
 export { PinIcon };
+
+/** The route number, styled as the board on the front of the bus. */
+function RouteTag({ name }: { name: string }) {
+  return (
+    <span
+      className="num shrink-0 px-1.5 py-px text-[0.8125rem] font-semibold"
+      style={{
+        fontFamily: 'var(--font-mono), monospace',
+        borderRadius: 'var(--r-sm)',
+        background: 'var(--accent)',
+        color: 'var(--on-accent)',
+      }}
+    >
+      {name}
+    </span>
+  );
+}
