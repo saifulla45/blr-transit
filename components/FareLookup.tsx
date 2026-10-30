@@ -86,12 +86,20 @@ export function FareLookup({
 
   return (
     <Panel id="fare" icon={<TicketIcon size={16} />} title="Fare &amp; journey">
+      {/*
+        Visible, not just a placeholder. The placeholder said "Travelling
+        to…" and then vanished the moment a station was chosen, leaving a
+        box containing one station name on a page titled with a different
+        station name — which is ambiguous in exactly the direction that
+        made a one-stop journey look like a bug.
+      */}
+      <p className="eyebrow pb-1.5">Travelling from {origin.name} to</p>
       <StationPicker
         stations={options}
         value={dest}
         onSelect={choose}
-        placeholder="Travelling to…"
-        label="Destination station"
+        placeholder="Choose a station…"
+        label={`Destination station, travelling from ${origin.name}`}
       />
 
       {destId && !fare && !journey && (
@@ -102,8 +110,29 @@ export function FareLookup({
 
       {destId && (fare || journey) && (
         <div className="mt-4">
+          {/*
+            The route, stated before the numbers.
+
+            The panel showed a destination picker and then three figures,
+            never naming the origin — so "Peenya Industry to Peenya" read as
+            a single station, and 0.9km and 10 rupees looked like a bug
+            rather than one stop on the Green line. The journey has two ends
+            and the page should say both.
+          */}
+          <p className="pb-3 text-[0.875rem] font-semibold">
+            {origin.name}
+            <span aria-hidden className="px-1.5" style={{ color: 'var(--muted)' }}>&rarr;</span>
+            {dest?.name}
+          </p>
+
           <dl className="grid grid-cols-3 gap-3">
-            <Figure label="Fare from" value={fare ? formatRupees(fare[0]) : '—'} />
+            {/*
+              "Fare from" was doubly misleading: it reads as "fare from
+              <station>", and taken as "fares start at" it is wrong too,
+              since the token shown here is the DEAREST option and the smart
+              card below it is cheaper.
+            */}
+            <Figure label="Token fare" value={fare ? formatRupees(fare[0]) : '—'} />
             <Figure label="Journey" value={journey ? String(journey[0]) : '—'} unit="min" />
             <Figure label="Distance" value={journey ? String(journey[1]) : '—'} unit="km" />
           </dl>
@@ -120,7 +149,7 @@ export function FareLookup({
             ) : (
               <span>Direct — no change of line</span>
             )}
-            {dest && <span>· to {dest.name}</span>}
+            {journey && <span>· {journey[3].length} stations</span>}
           </p>
 
           {/* --- What it costs, by how you pay -------------------------------- */}
