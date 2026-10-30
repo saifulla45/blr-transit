@@ -222,6 +222,7 @@ export function Browse({
               station={nearest[0].item}
               distanceKm={nearest[0].distanceKm}
               minutesSinceMidnight={now.minutes}
+              from={state.coords}
             />
           </section>
         )}

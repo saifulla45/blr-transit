@@ -23,10 +23,12 @@ import type { Station } from '@/types/transit';
  * range.
  */
 export function LastMile({
-  station, distanceKm, minutesSinceMidnight,
+  station, distanceKm, minutesSinceMidnight, from,
 }: {
   station: Station;
   distanceKm: number;
+  /** The rider's fix, passed into the ride links so the app can prefill pickup. */
+  from?: { lat: number; lon: number };
   /** From nowInBengaluru(), so the night tariff follows Bengaluru's clock. */
   minutesSinceMidnight: number;
 }) {
@@ -70,7 +72,7 @@ export function LastMile({
   }
 
   const meter = rideOptions(distanceKm, hour).find((o) => o.exact)!;
-  const apps = rideApps(distanceKm, hour, station.lat, station.lon, station.name);
+  const apps = rideApps(distanceKm, hour, station.lat, station.lon, station.name, from);
 
   return (
     <section

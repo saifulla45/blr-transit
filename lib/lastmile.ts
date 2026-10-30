@@ -49,6 +49,20 @@ export const AUTO_TARIFF = {
  */
 export const ROAD_FACTOR = 1.35;
 
+/**
+ * Namma Yatri's own auto rate, which is NOT the government meter.
+ *
+ * Reported August 2026: 40 rupees for the first 2 km, then 19/km, plus a
+ * pickup fee and 1.50/min waiting after three minutes. The pickup fee is
+ * unpublished, so it lives in the top of the range rather than as a number.
+ */
+export const NAMMA_YATRI_AUTO = {
+  baseRupees: 40,
+  baseKm: 2,
+  perKmRupees: 19,
+  lastVerified: '2026-10-27',
+} as const;
+
 export function isNightTariff(hour: number): boolean {
   return hour >= AUTO_TARIFF.nightFromHour || hour < AUTO_TARIFF.nightToHour;
 }
@@ -89,9 +103,8 @@ export interface RideOption {
  * they are honest about demand pricing rather than falsely precise.
  */
 const RELATIVE_TO_METER: Record<Exclude<RideMode, 'auto-meter'>, [number, number]> = {
-  // Reported at 30-40% above the meter in normal conditions, far higher in
-  // rain or peak. The top of this range is deliberately not the worst case.
-  'auto-app': [1.3, 1.9],
+  // A 9 km trip came in at 1.34-1.62x the meter; reports reach nearly double.
+  'auto-app': [1.3, 2.0],
   // Roughly half an auto; the cheapest motorised option when it is running.
   bike: [0.6, 0.85],
   cab: [1.9, 2.8],
@@ -157,18 +170,30 @@ export function rideOptions(straightLineKm: number, hour: number): RideOption[] 
  * Deep links that open the app when installed and fall back to the web or
  * store when not. Each was checked to resolve rather than 404.
  *
- * Uber and Ola accept a destination; Rapido and Namma Yatri have no
- * documented public deep-link format, so they open cold rather than shipping
- * a fabricated URL that breaks silently.
+ * Only Uber documents a link that fills in the trip. Ola's web URL opens the
+ * app but the app drops its parameters, and Rapido and Namma Yatri publish
+ * no format, so those three open cold rather than claiming a destination.
+ *
+ * `from` is the rider's fix, handed only to the app they tapped; without it
+ * Uber falls back to the phone's own location.
  */
-export function rideAppLinks(lat: number, lon: number, stationName: string) {
-  const uber = new URLSearchParams({
-    action: 'setPickup',
-    pickup: 'my_location',
-    'dropoff[latitude]': String(lat),
-    'dropoff[longitude]': String(lon),
-    'dropoff[nickname]': `${stationName} Metro`,
-  });
+export function rideAppLinks(
+  lat: number,
+  lon: number,
+  stationName: string,
+  from?: { lat: number; lon: number },
+) {
+  const uber = new URLSearchParams({ action: 'setPickup' });
+  if (from) {
+    uber.set('pickup[latitude]', String(from.lat));
+    uber.set('pickup[longitude]', String(from.lon));
+    uber.set('pickup[nickname]', 'Your location');
+  } else {
+    uber.set('pickup', 'my_location');
+  }
+  uber.set('dropoff[latitude]', String(lat));
+  uber.set('dropoff[longitude]', String(lon));
+  uber.set('dropoff[nickname]', `${stationName} Metro`);
   const ola = new URLSearchParams({
     drop_lat: String(lat),
     drop_lng: String(lon),
@@ -180,7 +205,7 @@ export function rideAppLinks(lat: number, lon: number, stationName: string) {
     { name: 'Namma Yatri', href: 'https://nammayatri.in/', hasDestination: false },
     { name: 'Rapido', href: 'https://www.rapido.bike/', hasDestination: false },
     { name: 'Uber', href: `https://m.uber.com/ul/?${uber.toString()}`, hasDestination: true },
-    { name: 'Ola', href: `https://book.olacabs.com/?${ola.toString()}`, hasDestination: true },
+    { name: 'Ola', href: `https://book.olacabs.com/?${ola.toString()}`, hasDestination: false },
   ];
 }
 
@@ -205,16 +230,14 @@ export interface RideApp {
  * Why apps differ at all, rather than every one of them showing the same
  * three numbers:
  *
- *  - Namma Yatri prices autos off the government meter and takes zero
- *    commission, with no rider booking or convenience fee — drivers are paid
- *    directly. Its auto fare therefore sits at or just above the meter
- *    instead of 30-90% over it.
+ *  - Namma Yatri runs its own rate card (NAMMA_YATRI_AUTO), a little above
+ *    the meter, and takes zero commission. In a reported 9 km comparison it
+ *    was the cheapest auto of the four.
  *  - Uber and Ola moved autos to zero commission for DRIVERS (Uber in Feb
  *    2025, Ola in June 2025), but riders are still charged demand pricing,
  *    so they keep the wider band.
- *  - Rapido is the bike-first operator and undercuts on bike and auto, but
- *    its cabs are not reliably cheaper — a 2km Bengaluru trip quoted higher
- *    on Rapido cab than Uber cab. So no cab discount is claimed.
+ *  - Rapido was assumed to undercut on autos; that same 9 km trip was 263
+ *    rupees on Rapido against 204-220 elsewhere, so no discount is claimed.
  *
  * Still estimates, and still labelled as such in the UI. The one number
  * anyone can hold a driver to is the meter.
@@ -225,8 +248,8 @@ export function rideApps(
   lat: number,
   lon: number,
   stationName: string,
+  from?: { lat: number; lon: number },
 ): RideApp[] {
-  const meter = meteredAutoFare(straightLineKm, hour);
   const options = rideOptions(straightLineKm, hour);
   const get = (mode: RideMode) => options.find((o) => o.mode === mode)!;
 
@@ -235,28 +258,29 @@ export function rideApps(
   const appAuto = get('auto-app');
   const cab = get('cab');
 
-  // Metered, plus the room a tip or surge still leaves.
-  const meterAuto: AppMode = { kind: 'auto', label: 'Auto', low: meter, high: Math.max(meter + 10, r5(meter * 1.25)) };
+  // Same road correction and night rule as the meter; top leaves room for the pickup fee.
+  const nyRoadKm = straightLineKm * ROAD_FACTOR;
+  const nyBase = NAMMA_YATRI_AUTO.baseRupees
+    + Math.max(0, nyRoadKm - NAMMA_YATRI_AUTO.baseKm) * NAMMA_YATRI_AUTO.perKmRupees;
+  const nyFare = Math.round(isNightTariff(hour) ? nyBase * AUTO_TARIFF.nightMultiplier : nyBase);
+  const nyAuto: AppMode = { kind: 'auto', label: 'Auto', low: nyFare, high: Math.max(nyFare + 15, r5(nyFare * 1.25)) };
   const demandAuto: AppMode = { kind: 'auto', label: 'Auto', low: appAuto.low, high: appAuto.high };
-  // Rapido undercuts on auto but is not a different vehicle, so it sits
-  // between the meter and the full demand band rather than below the meter.
-  const rapidoAuto: AppMode = { kind: 'auto', label: 'Auto', low: Math.max(meter, r5(appAuto.low * 0.8)), high: r5(appAuto.high * 0.85) };
   const bikeMode: AppMode = { kind: 'bike', label: 'Bike', low: bike.low, high: bike.high };
   const cabMode: AppMode = { kind: 'cab', label: 'Cab', low: cab.low, high: cab.high };
 
-  const links = rideAppLinks(lat, lon, stationName);
+  const links = rideAppLinks(lat, lon, stationName, from);
   const href = (name: string) => links.find((l) => l.name === name)!;
 
   return [
     {
       ...href('Namma Yatri'),
-      modes: [meterAuto, cabMode],
-      note: 'Meter-priced, zero commission',
+      modes: [nyAuto, cabMode],
+      note: 'Zero commission',
     },
     {
       ...href('Rapido'),
-      modes: [bikeMode, rapidoAuto, cabMode],
-      note: 'Usually cheapest',
+      modes: [bikeMode, demandAuto, cabMode],
+      note: 'Demand pricing',
     },
     { ...href('Uber'), modes: [bikeMode, demandAuto, cabMode], note: 'Demand pricing' },
     { ...href('Ola'), modes: [bikeMode, demandAuto, cabMode], note: 'Demand pricing' },

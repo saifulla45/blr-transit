@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AUTO_TARIFF, ROAD_FACTOR, isNightTariff, meteredAutoFare, rideAppLinks, rideOptions,
+  AUTO_TARIFF, NAMMA_YATRI_AUTO, ROAD_FACTOR, isNightTariff, meteredAutoFare, rideAppLinks, rideOptions,
   rideApps,
 } from '../lastmile';
 
@@ -129,6 +129,24 @@ describe('rideAppLinks', () => {
     expect(links[0].name).toBe('Namma Yatri');
   });
 
+  it('claims a prefilled destination only for Uber', () => {
+    // Ola's app drops the web URL's parameters, confirmed on a phone.
+    expect(links.filter((l) => l.hasDestination).map((l) => l.name)).toEqual(['Uber']);
+  });
+
+  it('prefills the Uber pickup from the rider fix when there is one', () => {
+    const withFix = rideAppLinks(12.9784, 77.6408, 'Indiranagar', { lat: 12.97, lon: 77.62 });
+    const uber = new URL(withFix.find((l) => l.name === 'Uber')!.href);
+    expect(uber.searchParams.get('pickup[latitude]')).toBe('12.97');
+    expect(uber.searchParams.get('pickup[longitude]')).toBe('77.62');
+    expect(uber.searchParams.get('pickup')).toBeNull();
+  });
+
+  it('falls back to the phone location for Uber pickup without a fix', () => {
+    const uber = new URL(links.find((l) => l.name === 'Uber')!.href);
+    expect(uber.searchParams.get('pickup')).toBe('my_location');
+  });
+
   it('produces parseable absolute https urls', () => {
     for (const link of links) {
       const url = new URL(link.href);
@@ -141,12 +159,15 @@ describe('rideApps', () => {
   const apps = (km = 4, hour = 12) => rideApps(km, hour, 12.9784, 77.6408, 'Indiranagar');
   const byName = (n: string, km = 4, hour = 12) => apps(km, hour).find((a) => a.name === n)!;
 
-  it('prices Namma Yatri autos off the meter, not the demand band', () => {
-    // The whole point of the per-app split: zero commission and no rider
-    // booking fee means its auto fare starts at the regulated figure.
+  it('prices Namma Yatri autos off its own rate card, not the meter', () => {
+    const roadKm = 4 * ROAD_FACTOR;
+    const expected = Math.round(
+      NAMMA_YATRI_AUTO.baseRupees + (roadKm - NAMMA_YATRI_AUTO.baseKm) * NAMMA_YATRI_AUTO.perKmRupees,
+    );
     const meter = meteredAutoFare(4, 12);
     const ny = byName('Namma Yatri').modes.find((m) => m.kind === 'auto')!;
-    expect(ny.low).toBe(meter);
+    expect(ny.low).toBe(expected);
+    expect(ny.low).toBeGreaterThan(meter);
 
     const uber = byName('Uber').modes.find((m) => m.kind === 'auto')!;
     expect(uber.low).toBeGreaterThan(meter);
@@ -161,11 +182,12 @@ describe('rideApps', () => {
     }
   });
 
-  it('puts Rapido auto below Uber and Ola but not below the meter', () => {
+  it('claims no auto discount for Rapido', () => {
+    // A reported 9 km trip was dearest on Rapido, so it shares the demand band.
     const rapido = byName('Rapido').modes.find((m) => m.kind === 'auto')!;
     const uber = byName('Uber').modes.find((m) => m.kind === 'auto')!;
-    expect(rapido.low).toBeLessThanOrEqual(uber.low);
-    expect(rapido.high).toBeLessThan(uber.high);
+    expect(rapido).toEqual(uber);
+    expect(byName('Rapido').note).not.toMatch(/cheap/i);
   });
 
   it('claims no cab discount for Rapido', () => {
