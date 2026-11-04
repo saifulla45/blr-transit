@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Credit } from '@/components/Credit';
+import { AppBar } from '@/components/AppBar';
+import { PageHeader } from '@/components/PageHeader';
+import { SiteFooter } from '@/components/SiteFooter';
 
 export const metadata: Metadata = {
   title: 'Privacy',
@@ -18,21 +20,12 @@ export const metadata: Metadata = {
  */
 export default function PrivacyPage() {
   return (
-    <main className="mx-auto w-full max-w-[44rem] px-5 py-10 md:px-8">
-      <Link
-        href="/"
-        className="text-[0.8125rem] font-semibold underline underline-offset-2"
-        style={{ color: 'var(--accent)' }}
-      >
-        ← Namma Commute
-      </Link>
+    <>
+    <AppBar overlay back={{ href: '/', label: 'Home' }} title="Privacy" />
+    <PageHeader eyebrow="Privacy" title="Nothing about you leaves your phone." />
+    <main className="mx-auto w-full max-w-[42rem] px-5 pb-6 pt-2 md:px-8">
 
-      <h1 className="mt-5 text-[1.75rem] font-bold leading-tight">Privacy</h1>
-
-      <div
-        className="mt-5 flex flex-col gap-3.5 text-[0.9375rem] leading-relaxed [&_a]:underline [&_a]:underline-offset-2 [&_h2]:mt-4 [&_h2]:text-[1.0625rem] [&_h2]:font-semibold [&_li]:ml-4 [&_li]:list-disc [&_ul]:flex [&_ul]:flex-col [&_ul]:gap-1.5"
-        style={{ color: 'var(--ink)' }}
-      >
+      <div className="prose-nc mt-8">
         <p>
           <strong>No accounts, no analytics, no advertising, no cookies.</strong> There is no
           server to send anything to — this site is a folder of static files on a CDN.
@@ -90,10 +83,8 @@ export default function PrivacyPage() {
           where its data comes from.
         </p>
       </div>
-
-      <p className="mt-8 text-[0.75rem]" style={{ color: 'var(--muted)' }}>
-        <Credit />
-      </p>
     </main>
+    <SiteFooter />
+    </>
   );
 }

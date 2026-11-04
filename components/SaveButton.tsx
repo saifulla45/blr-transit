@@ -13,12 +13,12 @@ export function SaveButton({ stationId, name }: { stationId: string; name: strin
       onClick={() => toggle(stationId)}
       aria-pressed={on}
       aria-label={on ? `Remove ${name} from saved` : `Save ${name}`}
-      className="tap flex items-center gap-1.5 px-2.5 text-[0.75rem] font-semibold transition-colors"
+      className="press flex h-9 items-center gap-1.5 px-3.5 text-[0.8125rem] font-semibold"
       style={{
-        borderRadius: 'var(--r-md)',
-        background: on ? 'var(--accent)' : 'var(--surface)',
-        color: on ? 'var(--on-accent)' : 'var(--muted)',
-        border: '1px solid var(--rule)',
+        borderRadius: 999,
+        background: on ? 'var(--ink)' : 'var(--surface)',
+        color: on ? 'var(--ground)' : 'var(--ink)',
+        border: `1px solid ${on ? 'var(--ink)' : 'var(--rule)'}`,
       }}
     >
       <svg width="13" height="13" viewBox="0 0 24 24" fill={on ? 'currentColor' : 'none'}

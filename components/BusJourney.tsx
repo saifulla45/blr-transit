@@ -125,7 +125,7 @@ export function BusJourney({ lat, lon }: { lat: number; lon: number }) {
     return (
       <Shell panelRef={panelRef}>
         <p className="text-[0.8125rem]" style={{ color: 'var(--muted)' }}>
-          {loading ? 'Loading the bus network…' : 'Scroll down to search bus routes.'}
+          {loading ? 'Loading the bus network…' : 'Bus routes load as this comes into view…'}
         </p>
       </Shell>
     );
@@ -253,7 +253,7 @@ export function BusJourney({ lat, lon }: { lat: number; lon: number }) {
                       <span
                         className="num shrink-0 px-1.5 py-px text-[0.8125rem] font-semibold"
                         style={{
-                          fontFamily: 'var(--font-mono), monospace',
+                          fontVariantNumeric: 'tabular-nums',
                           borderRadius: 'var(--r-sm)',
                           background: 'var(--accent)',
                           color: 'var(--on-accent)',
@@ -268,7 +268,7 @@ export function BusJourney({ lat, lon }: { lat: number; lon: number }) {
                       type="button"
                       onClick={() => setOpenPath(openPath === b.routeId ? null : b.routeId)}
                       className="num mt-1.5 text-[0.75rem] underline decoration-dotted underline-offset-2"
-                      style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono), monospace' }}
+                      style={{ color: 'var(--muted)', fontVariantNumeric: 'tabular-nums' }}
                       aria-expanded={openPath === b.routeId}
                     >
                       {b.stopCount} stops · {openPath === b.routeId ? 'hide route' : 'show route'}
@@ -280,7 +280,7 @@ export function BusJourney({ lat, lon }: { lat: number; lon: number }) {
                           <li key={i} className="flex items-baseline gap-2">
                             <span
                               className="num shrink-0 text-[0.6875rem]"
-                              style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono), monospace' }}
+                              style={{ color: 'var(--muted)', fontVariantNumeric: 'tabular-nums' }}
                             >
                               {String(i + 1).padStart(2, '0')}
                             </span>
@@ -318,11 +318,18 @@ function Shell({
   panelRef?: React.Ref<HTMLElement>;
 }) {
   return (
-    <section ref={panelRef}>
-      <h2 className="eyebrow flex items-center gap-1.5 pb-2">
-        <BusIcon size={14} /> Which bus goes there
-      </h2>
-      <div className="pt-3" style={{ borderTop: '1px solid var(--rule)' }}>{children}</div>
+    <section ref={panelRef} className="card p-4 md:p-5">
+      <div className="flex items-center gap-3 pb-3.5">
+        <span className="chip-grad h-9 w-9 shrink-0"
+          style={{ ['--chip-a' as string]: '#1f8a7e', ['--chip-b' as string]: '#0f6b62' }}>
+          <BusIcon size={17} />
+        </span>
+        <div>
+          <p className="eyebrow">BMTC</p>
+          <h2 className="text-[1.125rem] font-semibold leading-tight tracking-[-0.02em]">Which bus goes there</h2>
+        </div>
+      </div>
+      <div>{children}</div>
     </section>
   );
 }
@@ -335,7 +342,7 @@ function RouteTag({ name }: { name: string }) {
     <span
       className="num shrink-0 px-1.5 py-px text-[0.8125rem] font-semibold"
       style={{
-        fontFamily: 'var(--font-mono), monospace',
+        fontVariantNumeric: 'tabular-nums',
         borderRadius: 'var(--r-sm)',
         background: 'var(--accent)',
         color: 'var(--on-accent)',

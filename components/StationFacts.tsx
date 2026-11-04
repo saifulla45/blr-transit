@@ -20,8 +20,7 @@ export function StationFacts({ station }: { station: Station }) {
         href={directionsUrl(station.lat, station.lon, `${station.name} Metro Station`)}
         target="_blank"
         rel="noreferrer"
-        className="text-[0.8125rem] font-semibold underline decoration-dotted underline-offset-2"
-        style={{ color: 'var(--accent)' }}
+        className="frost press inline-flex items-center rounded-full px-3.5 py-1.5 text-[0.8125rem] font-semibold"
       >
         Directions to the station
       </a>

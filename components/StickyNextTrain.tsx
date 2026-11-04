@@ -61,11 +61,14 @@ export function StickyNextTrain({
       }}
     >
       <div
-        className="pointer-events-auto mx-auto max-w-[34rem] px-4 py-2.5 shadow-lg"
+        className="pointer-events-auto mx-auto max-w-[34rem] px-4 py-3"
         style={{
-          borderRadius: 'calc(var(--r-md) * 2)',
-          background: 'var(--ink)',
-          color: 'var(--ground)',
+          borderRadius: 'var(--r-lg)',
+          background: 'linear-gradient(160deg, #011f20, #0b5254)',
+          color: '#ffffff',
+          boxShadow: 'var(--shadow-pop)',
+          backdropFilter: 'blur(14px)',
+          WebkitBackdropFilter: 'blur(14px)',
         }}
       >
         {/* Labelled: without this the bar is two bare times with no indication
@@ -97,7 +100,7 @@ export function StickyNextTrain({
             <div className="flex items-baseline gap-2">
               <span
                 className="num text-[1.125rem] font-semibold"
-                style={{ fontFamily: 'var(--font-mono), monospace' }}
+                style={{ fontVariantNumeric: 'tabular-nums' }}
               >
                 {clockParts(u.scheduled).time}
                 <span className="ml-0.5 text-[0.6875rem] font-medium opacity-70">

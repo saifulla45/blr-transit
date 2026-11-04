@@ -51,7 +51,7 @@ export function BusesPanel({ buses, stationName }: { buses: BusRoute[]; stationN
               <span
                 className="num shrink-0 px-1.5 py-px text-[0.8125rem] font-semibold"
                 style={{
-                  fontFamily: 'var(--font-mono), monospace',
+                  fontVariantNumeric: 'tabular-nums',
                   borderRadius: 'var(--r-sm)',
                   // Metro feeders are the routes that exist to connect to this
                   // station, so they get the accent.
@@ -66,7 +66,7 @@ export function BusesPanel({ buses, stationName }: { buses: BusRoute[]; stationN
 
             <div
               className="num mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[0.75rem]"
-              style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono), monospace' }}
+              style={{ color: 'var(--muted)', fontVariantNumeric: 'tabular-nums' }}
             >
               <span>every ~{b.headway} min</span>
               <span>{formatMinutes(b.firstBus)}–{formatMinutes(b.lastBus)}</span>

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Credit } from '@/components/Credit';
+import { AppBar } from '@/components/AppBar';
+import { PageHeader } from '@/components/PageHeader';
+import { SiteFooter } from '@/components/SiteFooter';
 import { getStationsIndex } from '@/lib/data';
 import { SITE_DESCRIPTION } from '@/lib/site';
 
@@ -24,16 +26,10 @@ export default async function AboutPage() {
   });
 
   return (
-    <main className="mx-auto w-full max-w-[44rem] px-5 py-10 md:px-8">
-      <Link
-        href="/"
-        className="text-[0.8125rem] font-semibold underline underline-offset-2"
-        style={{ color: 'var(--accent)' }}
-      >
-        ← Namma Commute
-      </Link>
-
-      <h1 className="mt-5 text-[1.75rem] font-bold leading-tight">About</h1>
+    <>
+    <AppBar overlay back={{ href: '/', label: 'Home' }} title="About" />
+    <PageHeader eyebrow="About" title="A metro guide you can trust." />
+    <main className="mx-auto w-full max-w-[42rem] px-5 pb-6 pt-2 md:px-8">
 
       <Prose>
         <p>
@@ -116,33 +112,19 @@ export default async function AboutPage() {
           timetable issues to the <a href="https://github.com/Vonter/bmrcl-gtfs">feed</a>.
         </p>
       </Prose>
-
-      <p className="mt-8 text-[0.75rem]" style={{ color: 'var(--muted)' }}>
-        <Credit />
-      </p>
     </main>
+    <SiteFooter />
+    </>
   );
 }
 
-/**
- * Local prose styling. The app has no global typographic defaults because
- * every other page is a dense UI of cards and rows, not running text — so
- * the two long-form pages carry their own rhythm rather than the whole app
- * carrying rules only they use.
- */
+/** Long-form rhythm, shared with the privacy page through .prose-nc. */
 function Prose({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      className="mt-5 flex flex-col gap-3.5 text-[0.9375rem] leading-relaxed [&_a]:underline [&_a]:underline-offset-2 [&_h2]:mt-4 [&_h2]:text-[1.0625rem] [&_h2]:font-semibold [&_li]:ml-4 [&_li]:list-disc [&_ul]:flex [&_ul]:flex-col [&_ul]:gap-1.5"
-      style={{ color: 'var(--ink)' }}
-    >
-      {children}
-    </div>
-  );
+  return <div className="prose-nc mt-8">{children}</div>;
 }
 
 function Mono({ children }: { children: React.ReactNode }) {
   return (
-    <span className="num" style={{ fontFamily: 'var(--font-mono), monospace' }}>{children}</span>
+    <span className="num" style={{ fontVariantNumeric: 'tabular-nums' }}>{children}</span>
   );
 }

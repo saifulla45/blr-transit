@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { Suspense } from 'react';
 import { toLite } from '@/types/transit';
 import { notFound } from 'next/navigation';
@@ -7,17 +6,20 @@ import { BusesPanel } from '@/components/BusesPanel';
 import { DepartureBoard } from '@/components/DepartureBoard';
 import { EntrancesPanel } from '@/components/EntrancesPanel';
 import { FareLookup } from '@/components/FareLookup';
+import { GettingHere } from '@/components/GettingHere';
 import { LineStrip } from '@/components/LineStrip';
 import { NearbyPanel } from '@/components/NearbyPanel';
 import { ParkingPanel } from '@/components/ParkingPanel';
 import { SectionNav } from '@/components/SectionNav';
-import { Credit } from '@/components/Credit';
+import { AppBar } from '@/components/AppBar';
+import { Orbs } from '@/components/Orbs';
+import { SiteFooter } from '@/components/SiteFooter';
 import { Reveal } from '@/components/Reveal';
 import { SaveButton } from '@/components/SaveButton';
 import { StationFacts } from '@/components/StationFacts';
 import { StationMap } from '@/components/StationMap';
 import { StickyNextTrain } from '@/components/StickyNextTrain';
-import { Accessible, LineTag, lineVar } from '@/components/primitives';
+import { Accessible, lineVar } from '@/components/primitives';
 import { InterchangeIcon, TrainIcon } from '@/components/icons';
 import {
   getBusesFor, getFareWindows, getFaresFrom, getJourneysFrom, getOverrides, getPasses,
@@ -86,68 +88,81 @@ export default async function StationPage({ params }: { params: Promise<{ id: st
   ]);
 
   return (
-    <main className="page-lift mx-auto w-full max-w-[34rem] px-5 pb-28 md:px-8 lg:max-w-[72rem]">
-      {/* A band in the station's own line colour, so the page has an identity
-          the moment it loads rather than opening on undifferentiated text. */}
-      <div
-        className="-mx-5 h-1 md:-mx-8"
-        style={{
-          background: `linear-gradient(to right, ${station.lines
-            .map((l) => lineVar(l))
-            .join(', ')})`,
-        }}
-        aria-hidden
-      />
+    <>
+    <AppBar
+      overlay
+      back={{ href: '/', label: 'All stations' }}
+      title={station.name}
+      right={<SaveButton stationId={station.id} name={station.name} />}
+    />
 
-      <nav className="safe-top pb-3 pt-3">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1 text-[0.8125rem]"
-          style={{ color: 'var(--muted)' }}
-        >
-          <span aria-hidden>←</span> All stations
-        </Link>
-      </nav>
-
-      <header className="max-w-[46rem] pb-5">
-        <div className="flex items-start gap-2.5">
-          {/* A metro glyph in the station's own line colour, so the page is
-              identifiable at a glance rather than opening on plain text. */}
-          <span className="mt-1 shrink-0" style={{ color: lineVar(station.lines[0]) }}>
-            <TrainIcon size={26} />
+    {/* The station's header on the aurora, lit by its own line colour. */}
+    <section
+      className="aurora -mt-[calc(3.5rem+max(0.5rem,env(safe-area-inset-top)))] overflow-x-clip"
+      style={{
+        backgroundImage: `radial-gradient(70% 80% at 0% 0%, color-mix(in srgb, ${lineVar(station.lines[0])} 35%, transparent), transparent 65%), linear-gradient(180deg, #011a1b 0%, #013536 45%, #0b5254 100%)`,
+      }}
+    >
+      <Orbs />
+      <header className="mx-auto w-full max-w-[34rem] px-5 pb-24 pt-[calc(5rem+env(safe-area-inset-top))] md:px-8 lg:max-w-[72rem]">
+        <div className="flex items-center gap-2 pb-3">
+          <span
+            className="flex h-8 w-8 items-center justify-center"
+            style={{
+              borderRadius: 9,
+              background: lineVar(station.lines[0]),
+              color: '#fff',
+              boxShadow: '0 0 0 2px rgba(255,255,255,.35)',
+            }}
+            aria-hidden
+          >
+            <TrainIcon size={17} />
           </span>
-          <div className="min-w-0">
-            <h1 className="text-balance text-[1.875rem] font-bold leading-tight tracking-tight">
-              {station.name}
-            </h1>
-            {/* BMRCL's own signage is bilingual; the feed ships the Kannada. */}
-            {station.nameKn && (
-              <p className="mt-1 text-[1rem] leading-tight" style={{ color: 'var(--muted)' }}>
-                {station.nameKn}
-              </p>
-            )}
-          </div>
+          <span className="text-[0.75rem] font-semibold uppercase tracking-[0.1em]" style={{ color: 'var(--muted)' }}>
+            Metro station
+          </span>
         </div>
-        <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1.5">
-          {station.lines.map((l) => <LineTag key={l} line={l} lines={lines} />)}
+        {/* Long names (Majestic's is 41 characters) step down a size rather
+            than filling the first screen with three lines of title. */}
+        <h1 className={`max-w-[46rem] text-balance leading-[1] ${
+          station.name.length > 24 ? 'text-[2.25rem] md:text-[3.25rem]' : 'text-[3rem] md:text-[4.25rem]'}`}>
+          {station.name}
+        </h1>
+        {/* BMRCL's own signage is bilingual; the feed ships the Kannada. */}
+        {station.nameKn && (
+          <p className="mt-1.5 text-[1.125rem] leading-tight" style={{ color: 'var(--muted)' }} lang="kn">
+            {station.nameKn}
+          </p>
+        )}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {station.lines.map((l) => (
+            <span key={l} className="frost flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.75rem] font-semibold">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ background: lineVar(l), boxShadow: '0 0 0 2px rgba(255,255,255,.6)' }} aria-hidden />
+              {lines.find((x) => x.id === l)?.name ?? l} line
+            </span>
+          ))}
           {station.isInterchange && (
-            <span className="eyebrow flex items-center gap-1" style={{ color: 'var(--accent)' }}>
+            <span className="frost flex items-center gap-1 rounded-full px-2.5 py-1 text-[0.75rem] font-semibold">
               <InterchangeIcon size={13} /> Interchange
             </span>
           )}
           {station.wheelchair && (
-            <span className="eyebrow flex items-center gap-1" style={{ color: 'var(--muted)' }}>
+            <span className="frost flex items-center gap-1 rounded-full px-2.5 py-1 text-[0.75rem] font-semibold">
               <Accessible /> Step-free
             </span>
           )}
-          <span className="ml-auto"><SaveButton stationId={station.id} name={station.name} /></span>
         </div>
-        <StationFacts station={station} />
+        <div className="mt-4"><StationFacts station={station} /></div>
       </header>
+    </section>
 
+    <main className="page-lift mx-auto w-full max-w-[34rem] px-5 pb-28 pt-6 md:px-8 lg:max-w-[72rem]">
       <div className="max-w-[46rem] pb-6">
         <LineStrip station={station} lines={lines} stations={stationsLite} />
       </div>
+
+      {/* Client-only: renders once a location (real or test) is known. */}
+      <div className="max-w-[46rem] empty:hidden [&:not(:empty)]:pb-6"><GettingHere station={station} /></div>
 
       <SectionNav hasBuses={buses.length > 0} />
 
@@ -177,7 +192,7 @@ export default async function StationPage({ params }: { params: Promise<{ id: st
             timetable={timetable}
             passes={passes}
           /></Suspense></Reveal>
-          <Reveal delay={60}><EntrancesPanel station={station} /></Reveal>
+          <Reveal delay={60}><EntrancesPanel station={station} pois={pois} /></Reveal>
           <Reveal delay={120}><NearbyPanel pois={pois} stationName={station.name} /></Reveal>
         </div>
 
@@ -204,18 +219,16 @@ export default async function StationPage({ params }: { params: Promise<{ id: st
         </div>
       </div>
 
-      <StickyNextTrain timetable={timetable} overrides={overrides} stationName={station.name} />
 
-      <footer
-        className="mt-10 pt-5 text-[0.75rem] leading-relaxed"
-        style={{ borderTop: '1px solid var(--rule)', color: 'var(--muted)' }}
-      >
-        <p>
-          Metro timetables Vonter/bmrcl-gtfs · buses Vonter/bmtc-gtfs (both ODbL 1.0) · parking
-          BMRCL · places and map data © OpenStreetMap contributors
-        </p>
-        <p className="mt-2"><Credit /></p>
-      </footer>
+
     </main>
+    {/* Outside <main>: page-lift leaves a transform on main, which would make
+        this fixed bar scroll with the page instead of floating. */}
+    <StickyNextTrain timetable={timetable} overrides={overrides} stationName={station.name} />
+    <SiteFooter>
+      Metro timetables Vonter/bmrcl-gtfs · buses Vonter/bmtc-gtfs (both ODbL 1.0) · parking
+      BMRCL · places and map data © OpenStreetMap contributors
+    </SiteFooter>
+    </>
   );
 }

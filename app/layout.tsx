@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Bricolage_Grotesque, IBM_Plex_Mono, Plus_Jakarta_Sans } from 'next/font/google';
+import { Geist, Geist_Mono, Instrument_Serif } from 'next/font/google';
 import { RegisterSW } from '@/components/RegisterSW';
 import { RouteTransition } from '@/components/RouteTransition';
 import { OG_IMAGE, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/site';
@@ -8,40 +8,36 @@ import { lineColorCss } from '@/lib/lineColors';
 import './globals.css';
 
 /*
-  Three faces, each with a job.
+  One family in two cuts.
 
-  Bricolage Grotesque for display. It carries real personality — slightly
-  condensed, with an unusual tension in the curves — which is what stops a
-  transit site reading like a spreadsheet, and its optical sizing axis keeps
-  the headline tight at 68px without getting airy at 24px.
+  Geist for everything you read and every heading: a neutral, precise grotesk
+  with a tall x-height, which is what matters on a phone held at arm's length
+  on a platform. Headings get their character from weight and tight tracking,
+  not from a second face.
 
-  Plus Jakarta Sans for everything you actually read. Open apertures and a
-  tall x-height, which is what matters on a phone held at arm's length on a
-  platform in daylight. Replaces Barlow, which was chosen for its signage
-  heritage but is plain at body size.
+  Geist Mono for times, fares and distances, which are compared and stacked:
+  columns of digits line up and read like a departure board.
 
   Both self-hosted by next/font, so no CDN request and no layout shift.
 */
-const display = Bricolage_Grotesque({
+const geist = Geist({
   subsets: ['latin'],
-  weight: ['600', '700', '800'],
-  variable: '--font-display',
-  display: 'swap',
-});
-
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
   variable: '--font-ui',
   display: 'swap',
 });
 
-// Times, fares, distances and capacities are all columns of digits; a
-// monospace face makes them line up and reads like a departure board.
-const plexMono = IBM_Plex_Mono({
+// Titles only: a fine, high-contrast serif that gives the page its voice.
+const display = Instrument_Serif({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-mono',
+  weight: '400',
+  style: ['normal', 'italic'],
+  variable: '--font-display',
+  display: 'swap',
+});
+
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-geist-mono',
   display: 'swap',
 });
 
@@ -61,7 +57,7 @@ export const metadata: Metadata = {
   authors: [{ name: 'Saifulla Attar', url: 'https://www.linkedin.com/in/mdsaifullaattar' }],
   creator: 'Saifulla Attar',
   manifest: '/manifest.webmanifest',
-  appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: 'black-translucent' },
+  appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: 'default' },
   icons: { icon: '/icon.svg', apple: '/icon.svg' },
   keywords: [
     'Namma Metro', 'Bengaluru metro', 'Bangalore metro timings', 'metro fare',
@@ -93,8 +89,8 @@ export const viewport: Viewport = {
   // Lets env(safe-area-inset-*) resolve on notched iPhones.
   viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#fbfafc' },
-    { media: '(prefers-color-scheme: dark)', color: '#141118' },
+    { media: '(prefers-color-scheme: light)', color: '#f2f6f6' },
+    { media: '(prefers-color-scheme: dark)', color: '#071415' },
   ],
 };
 
@@ -111,7 +107,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const { lines } = await getStationsIndex();
 
   return (
-    <html lang="en" className={`${display.variable} ${jakarta.variable} ${plexMono.variable}`}>
+    <html lang="en" className={`${geist.variable} ${geistMono.variable} ${display.variable}`}>
       <head>
         {/* Generated from route_color; ids are sanitised and colours are
             re-emitted as #rrggbb, so no feed text reaches the stylesheet. */}

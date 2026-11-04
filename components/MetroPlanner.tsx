@@ -100,10 +100,17 @@ export function MetroPlanner({
   }, []);
 
   return (
-    <section id="plan" className="min-w-0 scroll-mt-4 md:col-span-2">
-      <h2 className="eyebrow flex items-center gap-1.5 pb-2">
-        <TicketIcon size={14} /> Plan a metro trip
-      </h2>
+    <section id="plan" className="card min-w-0 scroll-mt-4 p-4 md:col-span-2 md:p-5">
+      <div className="flex items-center gap-3 pb-3.5">
+        <span className="chip-grad h-9 w-9 shrink-0"
+          style={{ ['--chip-a' as string]: '#0b5556', ['--chip-b' as string]: '#013536' }}>
+          <TicketIcon size={17} />
+        </span>
+        <div>
+          <p className="eyebrow">Metro</p>
+          <h2 className="text-[1.125rem] font-semibold leading-tight tracking-[-0.02em]">Plan a trip</h2>
+        </div>
+      </div>
 
       <div className="grid gap-2.5 sm:grid-cols-2">
         <StationPicker
@@ -206,7 +213,7 @@ function Figure({ label, value, unit }: { label: string; value: string; unit?: s
       <div className="eyebrow">{label}</div>
       <div
         className="num mt-1 flex items-baseline gap-1 whitespace-nowrap text-[1.375rem] font-semibold leading-none"
-        style={{ fontFamily: 'var(--font-mono), monospace' }}
+        style={{ fontVariantNumeric: 'tabular-nums' }}
       >
         {value}
         {unit && (

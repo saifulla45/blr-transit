@@ -17,8 +17,9 @@ export function SavedStations({ stations, lines }: { stations: Station[]; lines:
     // Fades in because it is client-only data and would otherwise snap in
     // after hydration, which reads as a glitch.
     <section className="stop-in min-w-0 md:col-span-2">
-      <h2 className="eyebrow pb-1">Your stations</h2>
-      <div className="min-w-0 md:grid md:grid-cols-2 md:gap-x-10">
+      <p className="eyebrow">Saved</p>
+      <h2 className="section-title mt-1 pb-3">Your stations</h2>
+      <div className="grid min-w-0 gap-2 md:grid-cols-2">
         {pinned.map((s) => <StationRow key={s.id} station={s} lines={lines} />)}
       </div>
     </section>

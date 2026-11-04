@@ -37,7 +37,7 @@ export function LineStrip({
               </span>
               <span
                 className="num text-[0.6875rem]"
-                style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono), monospace' }}
+                style={{ color: 'var(--muted)', fontVariantNumeric: 'tabular-nums' }}
               >
                 stop {i + 1} of {line.order.length}
               </span>

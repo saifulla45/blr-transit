@@ -8,7 +8,7 @@ import {
   clockParts, formatMinutes, formatRelative, nowInBengaluru, servicePatternFor,
 } from '@/lib/time';
 import { FlipTime } from './FlipTime';
-import { lineVar, Rail } from './primitives';
+import { lineVar } from './primitives';
 import { TrainIcon } from './icons';
 import { Panel } from './Panel';
 
@@ -52,11 +52,11 @@ export function DepartureBoard({
       icon={<TrainIcon size={16} />}
       title="Next trains"
       accent={groups[0] ? lineVar(groups[0].line) : undefined}
-      meta={<span className="num" style={{ fontFamily: 'var(--font-mono), monospace' }}>
+      meta={<span className="num" >
         {PATTERN_LABEL[pattern]} · {formatMinutes(now.minutes)}
       </span>}
     >
-      <div className="flex flex-col">
+      <div className="flex flex-col gap-2.5">
           {groups.map((g) => (
           <DirectionBlock
             key={`${g.line}:${g.direction}`}
@@ -85,106 +85,109 @@ function DirectionBlock({
   const next = g.upcoming[0];
   const rest = g.upcoming.slice(1);
   const lineLabel = lines.find((l) => l.id === g.line)?.name ?? g.line;
+  const colour = lineVar(g.line);
+  const relative = next
+    ? (next.nextDay && next.inMinutes > 180 ? 'tomorrow' : formatRelative(next.inMinutes))
+    : null;
+  const imminent = next !== undefined && !next.nextDay && next.inMinutes <= 2;
 
   return (
-    <div
-      className="flex items-stretch gap-3 py-4 first:pt-1"
-      style={{ borderTop: '1px solid var(--rule)' }}
-    >
-      <Rail line={g.line} />
+    <div className="tile relative overflow-hidden">
+      {/* The line's colour as the tile's spine, like the strip on a platform sign. */}
+      <span className="absolute inset-y-0 left-0 w-1" style={{ background: colour }} aria-hidden />
 
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-baseline gap-x-2">
-          <span
-            className="text-[0.6875rem] font-semibold uppercase tracking-wide"
-            style={{ color: lineVar(g.line) }}
-          >
-            {lineLabel}
-          </span>
-          <span className="text-[1.0625rem] font-semibold leading-tight">
-            towards {g.primaryHeadsign}
-          </span>
-          {/* Which platform — the question you have in the ten seconds after
+      <div className="py-3.5 pl-5 pr-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em]" style={{ color: colour }}>
+              {lineLabel} line
+            </p>
+            <p className="mt-0.5 text-[1rem] font-semibold leading-snug tracking-[-0.01em]">
+              To {g.primaryHeadsign}
+            </p>
+          </div>
+          {/* Which platform: the question you have in the ten seconds after
               tapping in, and the feed has known it all along. */}
           {g.platform && (
             <span
-              className="num shrink-0 px-1.5 py-px text-[0.6875rem] font-semibold"
-              style={{
-                fontFamily: 'var(--font-mono), monospace',
-                borderRadius: 'var(--r-sm)',
-                background: `color-mix(in srgb, ${lineVar(g.line)} 18%, transparent)`,
-                color: lineVar(g.line),
-              }}
+              className="num shrink-0 rounded-md px-2 py-1 text-[0.75rem] font-semibold"
+              style={{ background: 'var(--sunken)', border: '1px solid var(--rule)' }}
             >
-              Platform {g.platform}
+              P{g.platform}
             </span>
           )}
         </div>
 
         {g.serviceEnded ? (
-          <p className="mt-2 text-sm" style={{ color: 'var(--muted)' }}>
+          <p className="mt-3 text-[0.875rem]" style={{ color: 'var(--muted)' }}>
             Service has ended for today.
           </p>
         ) : null}
 
         {next && (
           // The single number you are squinting at: the largest thing on the page.
-          <div className="mt-2 flex items-baseline gap-3">
-            <span className="num text-[2.5rem] font-semibold leading-none tracking-tight">
+          <div className="mt-3 flex items-end justify-between gap-3">
+            <span className="num text-[2.5rem] font-semibold leading-none tracking-[-0.04em]">
               {/*
                 Split-flap, because that is what the board above the platform
-                does. The motion is not decoration: a flap turns exactly when
-                that digit changes, so movement here means a departure has
-                actually moved on.
+                does. A flap turns exactly when that digit changes, so movement
+                here means a departure has actually moved on.
               */}
               <FlipTime
                 value={clockParts(next.scheduled).time}
                 ariaLabel={`${clockParts(next.scheduled).time} ${clockParts(next.scheduled).meridiem}`}
               />
-              <span className="ml-1 text-[1rem] font-medium" style={{ color: 'var(--muted)' }}>
+              <span className="ml-1 text-[0.9375rem] font-medium tracking-normal" style={{ color: 'var(--muted)' }}>
                 {clockParts(next.scheduled).meridiem}
               </span>
             </span>
-            <span className="text-sm font-medium" style={{ color: 'var(--accent)' }}>
-              {next.nextDay && next.inMinutes > 180 ? 'tomorrow' : formatRelative(next.inMinutes)}
-            </span>
-            {peakAt?.(next.scheduled) && (
+            <span className="flex flex-col items-end gap-1">
               <span
-                className="text-[0.625rem] font-semibold uppercase tracking-wide"
-                style={{ color: 'var(--warn)' }}
-                title="Peak fare — a smart card is cheaper off-peak"
+                className="rounded-full px-2.5 py-1 text-[0.8125rem] font-semibold"
+                style={imminent
+                  ? { background: 'var(--ink)', color: 'var(--ground)' }
+                  : { background: 'var(--brand-gradient)', color: '#ffffff', boxShadow: 'var(--glow)' }}
               >
-                peak fare
+                {relative}
               </span>
-            )}
+              {peakAt?.(next.scheduled) && (
+                <span
+                  className="text-[0.625rem] font-semibold uppercase tracking-wide"
+                  style={{ color: 'var(--warn)' }}
+                  title="Peak fare — a smart card is cheaper off-peak"
+                >
+                  peak fare
+                </span>
+              )}
+            </span>
           </div>
         )}
 
         {next && next.headsign !== g.primaryHeadsign && (
-          <p className="mt-1 text-[0.75rem]" style={{ color: 'var(--warn)' }}>
+          <p className="mt-1.5 text-[0.75rem]" style={{ color: 'var(--warn)' }}>
             Short loop — terminates {next.headsign}
           </p>
         )}
 
         {rest.length > 0 && (
-          <ul
-            className="num mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[0.8125rem]"
-            style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono), monospace' }}
-          >
+          <ul className="mt-3 flex flex-wrap gap-1.5">
             {rest.map((u, i) => (
-              <li key={i}>
+              <li
+                key={i}
+                className="num rounded-md px-2 py-1 text-[0.75rem]"
+                style={{ background: 'var(--sunken)', color: 'var(--muted)' }}
+                title={u.headsign !== g.primaryHeadsign ? `Terminates ${u.headsign}` : undefined}
+              >
                 {formatMinutes(u.scheduled)}
-                {u.headsign !== g.primaryHeadsign && (
-                  <span style={{ color: 'var(--warn)' }} title={`Terminates ${u.headsign}`}> ·short</span>
-                )}
+                {u.headsign !== g.primaryHeadsign && <span style={{ color: 'var(--warn)' }}> ·short</span>}
               </li>
             ))}
           </ul>
         )}
 
         <p
-          className="num mt-3 text-[0.75rem]"
-          style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono), monospace' }}
+          className="num mt-3 text-[0.6875rem]"
+          style={{ color: 'var(--muted)' }}
         >
           First {formatMinutes(g.firstTrain)} · Last {formatMinutes(g.lastTrain)}
         </p>

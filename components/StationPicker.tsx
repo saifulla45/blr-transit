@@ -64,10 +64,10 @@ export function StationPicker({
           else if (e.key === 'Enter' && matches[active]) { e.preventDefault(); choose(matches[active]); }
           else if (e.key === 'Escape') { setOpen(false); }
         }}
-        className="tap w-full px-3.5 text-[0.9375rem] outline-none"
+        className="tap min-h-[48px] w-full px-3.5 text-[0.9375rem] outline-none transition-[box-shadow] duration-200 focus:shadow-[0_0_0_4px_var(--accent-soft)]"
         style={{
           borderRadius: 'var(--r-md)',
-          background: 'var(--surface)',
+          background: 'var(--raised)',
           border: '1px solid var(--rule)',
           color: 'var(--ink)',
         }}
@@ -82,7 +82,7 @@ export function StationPicker({
             borderRadius: 'var(--r-md)',
             background: 'var(--raised)',
             border: '1px solid var(--rule)',
-            boxShadow: '0 16px 40px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.4)',
+            boxShadow: 'var(--shadow-pop)',
           }}
         >
           {matches.map((s, i) => (
@@ -113,7 +113,7 @@ export function StationPicker({
           style={{
             borderRadius: 'var(--r-md)', background: 'var(--raised)',
             border: '1px solid var(--rule)', color: 'var(--muted)',
-            boxShadow: '0 16px 40px rgba(0,0,0,.55)',
+            boxShadow: 'var(--shadow-pop)',
           }}
         >
           No station matches “{query.trim()}”.

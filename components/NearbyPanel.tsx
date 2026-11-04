@@ -105,7 +105,7 @@ export function NearbyPanel({ pois, stationName }: { pois: Poi[]; stationName: s
               <span className="flex shrink-0 items-center gap-1.5">
                 <span
                   className="num text-[0.8125rem]"
-                  style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono), monospace' }}
+                  style={{ color: 'var(--muted)', fontVariantNumeric: 'tabular-nums' }}
                 >
                   {p.distance} m
                 </span>

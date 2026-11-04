@@ -18,12 +18,15 @@ import { OutOfArea } from './OutOfArea';
 import { MetroPlanner } from './MetroPlanner';
 import { SavedStations } from './SavedStations';
 import { Hero } from './Hero';
-import { StationRow } from './StationRow';
+import { StationGroup, StationRow } from './StationRow';
 import { UnifiedSearch } from './UnifiedSearch';
 import { lineVar } from './primitives';
 import { matchByName } from '@/lib/search';
 
 type Filter = LineId | 'ALL';
+
+// Enough to show the list's shape; the rest is one tap away.
+const PREVIEW_COUNT = 8;
 
 /**
  * Everything below the hero: locate, search, filter by line, browse all 83.
@@ -31,15 +34,16 @@ type Filter = LineId | 'ALL';
  * something to do either way.
  */
 export function Browse({
-  stations, lines, network, overrides, stats, fareWindows, live,
+  stations, lines, network, overrides, fareWindows, live,
 }: {
   stations: Station[]; lines: Line[]; network: NetworkStatus; overrides: CalendarOverrides;
-  stats: Array<{ value: string; label: string }>; fareWindows: FareWindows;
+  fareWindows: FareWindows;
   live: Net;
 }) {
   const { state, request } = useLocation();
   const [q] = useState('');
   const [filter, setFilter] = useState<Filter>('ALL');
+  const [expanded, setExpanded] = useState(false);
 
   /*
     Same null-until-mounted pattern as the departure boards: the server has no
@@ -78,13 +82,7 @@ export function Browse({
           type="button"
           onClick={request}
           disabled={state.status === 'locating'}
-          className="tap flex min-h-[48px] items-center justify-center gap-2 px-5 text-[0.9375rem] font-semibold transition-opacity disabled:opacity-60 sm:w-auto sm:shrink-0"
-          style={{
-            borderRadius: 'var(--r-md)',
-            background: 'var(--accent)',
-            color: 'var(--on-accent)',
-            boxShadow: '0 0 28px rgba(194,100,216,.40)',
-          }}
+          className="btn-primary press tap text-[0.9375rem] sm:w-auto sm:shrink-0"
         >
           <Pin />
           {/*
@@ -172,34 +170,18 @@ export function Browse({
           scroll-scrubbed drawing below rides on. */}
       <SmoothScroll />
 
-      <Hero network={network} overrides={overrides} stats={stats}>{controls}</Hero>
+      <Hero network={network} overrides={overrides}>{controls}</Hero>
 
-      {/* The one place where scrolling is the content. Immediately after the
-          hero, before anything task-shaped. */}
-      <CinematicNetwork net={live} overrides={overrides} />
 
       {/* Results sit on the page ground, not on the photograph. */}
       {/* min-w-0 throughout: grid items default to min-width:auto, so a long
           station row would otherwise refuse to shrink and overflow the page
           horizontally on narrow screens. */}
-      <div className="mx-auto grid w-full max-w-[64rem] gap-9 px-5 pt-9 md:grid-cols-2 md:gap-x-10 md:px-8 md:pt-11">
+      <div className="mx-auto grid w-full max-w-[64rem] gap-8 px-5 pt-2 md:grid-cols-2 md:gap-x-8 md:px-8 md:pt-4">
         <SavedStations stations={stations} lines={lines} />
 
         {state.status === 'ready' && outOfArea && (
           <OutOfArea nearestStationKm={nearest[0].distanceKm} />
-        )}
-
-        {state.status === 'ready' && !outOfArea && (
-          <section className="stop-in min-w-0 md:col-span-2">
-            <h2 className="eyebrow pb-1">
-              Nearest to you{state.stale ? ' · last known location' : ''}
-            </h2>
-            <div className="min-w-0 md:grid md:grid-cols-2 md:gap-x-10">
-              {nearest.map(({ item, distanceKm }) => (
-                <StationRow key={item.id} station={item} lines={lines} distanceKm={distanceKm} />
-              ))}
-            </div>
-          </section>
         )}
 
         {/*
@@ -227,6 +209,18 @@ export function Browse({
           </section>
         )}
 
+        {state.status === 'ready' && !outOfArea && nearest.length > 1 && (
+          <section className="stop-in min-w-0 md:col-span-2">
+            <p className="eyebrow">{state.stale ? 'Last known location' : 'Around you'}</p>
+            <h2 className="section-title mt-1 pb-3">Other stations nearby</h2>
+            <StationGroup>
+              {nearest.slice(1).map(({ item, distanceKm }) => (
+                <StationRow key={item.id} station={item} lines={lines} distanceKm={distanceKm} grouped />
+              ))}
+            </StationGroup>
+          </section>
+        )}
+
         {/* Metro A-to-B from the home page: buses already answered this here,
             and making people open a station page first was an odd asymmetry. */}
         {/* useSearchParams bails out of prerendering without a boundary;
@@ -249,17 +243,31 @@ export function Browse({
           </section>
         )}
 
-        <section className="min-w-0 md:col-span-2">
-          <div className="flex flex-wrap items-baseline justify-between gap-2 pb-2">
-            <h2 className="eyebrow">
-              {q.trim() ? `${listed.length} matching` : 'All stations'}
-            </h2>
-            <span className="eyebrow" style={{ color: 'var(--muted)' }}>
+      </div>
+
+      {/* The one place where scrolling is the content. After the tasks, so
+          someone who opened the site to find a train is never made to
+          scroll through a showpiece first. */}
+      <div className="mt-12">
+        <CinematicNetwork net={live} overrides={overrides} />
+      </div>
+
+      <div className="mx-auto grid w-full max-w-[64rem] gap-8 px-5 pt-10 md:px-8">
+        <section className="min-w-0">
+          <div className="flex flex-wrap items-end justify-between gap-2 pb-3">
+            <div>
+              <p className="eyebrow">Browse</p>
+              <h2 className="section-title mt-1">
+                {q.trim() ? `${listed.length} matching` : 'All stations'}
+              </h2>
+            </div>
+            <span className="num rounded-full px-2.5 py-1 text-[0.6875rem] font-semibold"
+              style={{ color: 'var(--muted)', background: 'var(--surface)', border: '1px solid var(--rule)' }}>
               {listed.length} of {stations.length}
             </span>
           </div>
 
-          <div className="flex flex-wrap gap-1.5 pb-1" role="group" aria-label="Filter by line">
+          <div className="scroll-x fade-x -mx-5 flex gap-2 px-5 pb-3 md:mx-0 md:px-0" role="group" aria-label="Filter by line">
             <FilterChip active={filter === 'ALL'} onClick={() => setFilter('ALL')} label="All lines" />
             {lines.map((l) => (
               <FilterChip
@@ -277,9 +285,23 @@ export function Browse({
               No station matches “{q.trim()}”{filter !== 'ALL' ? ' on that line' : ''}.
             </p>
           ) : (
-            <div className="min-w-0 md:grid md:grid-cols-2 md:gap-x-10">
-              {listed.map((s) => <StationRow key={s.id} station={s} lines={lines} />)}
-            </div>
+            <>
+              <StationGroup>
+                {(expanded ? listed : listed.slice(0, PREVIEW_COUNT)).map((s) => (
+                  <StationRow key={s.id} station={s} lines={lines} grouped />
+                ))}
+              </StationGroup>
+              {listed.length > PREVIEW_COUNT && (
+                <button
+                  type="button"
+                  onClick={() => setExpanded((v) => !v)}
+                  aria-expanded={expanded}
+                  className="btn-ghost press tap mt-3 w-full text-[0.875rem]"
+                >
+                  {expanded ? 'Show fewer' : `Show all ${listed.length} stations`}
+                </button>
+              )}
+            </>
           )}
         </section>
       </div>
@@ -295,11 +317,13 @@ function FilterChip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className="flex items-center gap-1.5 px-3 py-1.5 text-[0.8125rem] font-medium transition-colors"
+      className="press flex shrink-0 items-center gap-2 whitespace-nowrap px-3.5 py-2 text-[0.8125rem] font-semibold"
       style={{
-        borderRadius: 'var(--r-md)',
-        background: active ? 'var(--ink)' : 'var(--surface)',
-        color: active ? 'var(--ground)' : 'var(--muted)',
+        borderRadius: 999,
+        background: active ? 'var(--brand-gradient)' : 'var(--surface)',
+        color: active ? '#ffffff' : 'var(--muted)',
+        border: `1px solid ${active ? 'transparent' : 'var(--rule)'}`,
+        boxShadow: active ? 'var(--glow)' : 'none',
       }}
     >
       {color && (

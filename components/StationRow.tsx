@@ -10,19 +10,24 @@ import { InterchangeIcon } from './icons';
  * question without a tap.
  */
 export function StationRow({
-  station, lines, distanceKm,
-}: { station: Station; lines: Line[]; distanceKm?: number }) {
+  station, lines, distanceKm, grouped = false,
+}: { station: Station; lines: Line[]; distanceKm?: number; grouped?: boolean }) {
+  // Inside a StationGroup the rail already carries the line colour, so a
+  // single-line tag repeats it; only interchanges keep their tags.
+  const showTags = !grouped || station.lines.length > 1;
   return (
     <Link
       href={`/station/${station.id}`}
-      className="tap flex min-w-0 items-stretch gap-3 py-3 transition-colors"
-      style={{ borderBottom: '1px solid var(--rule)' }}
+      className={grouped
+        ? 'press tap flex min-w-0 items-stretch gap-3 px-4 py-3'
+        : 'card press lift tap flex min-w-0 items-stretch gap-3 px-3.5 py-3'}
+      style={grouped ? undefined : { borderRadius: 'var(--r-md)' }}
     >
       <Rail line={station.lines[0]} />
 
       <span className="min-w-0 flex-1 py-0.5">
         <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <span className="truncate text-[1.0625rem] font-semibold leading-tight">
+          <span className="truncate text-[1rem] font-bold leading-tight tracking-tight">
             {station.name}
           </span>
           {/*
@@ -51,7 +56,7 @@ export function StationRow({
           {distanceKm !== undefined && (
             <span
               className="num text-[0.75rem]"
-              style={{ color: 'var(--ink)', fontFamily: 'var(--font-mono), monospace' }}
+              style={{ color: 'var(--ink)' }}
             >
               {formatDistance(distanceKm)}
               <span style={{ color: 'var(--muted)' }}> · {walkingMinutes(distanceKm)} min walk</span>
@@ -61,9 +66,26 @@ export function StationRow({
         </span>
       </span>
 
-      <span className="flex shrink-0 flex-col items-end justify-center gap-1">
-        {station.lines.map((l) => <LineTag key={l} line={l} lines={lines} />)}
-      </span>
+      {showTags && (
+        <span className="flex shrink-0 flex-col items-end justify-center gap-1">
+          {station.lines.map((l) => <LineTag key={l} line={l} lines={lines} />)}
+        </span>
+      )}
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden
+        className="shrink-0 self-center" style={{ color: 'var(--muted)', opacity: .6 }}>
+        <path d="M9 6l6 6-6 6" />
+      </svg>
     </Link>
+  );
+}
+
+/** Rows in one card with hairlines between them, instead of a card per row. */
+export function StationGroup({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="card min-w-0 overflow-hidden [&>*+*]:border-t [&>*+*]:border-[var(--rule)]"
+      style={{ borderRadius: 'var(--r-lg)' }}>
+      {children}
+    </div>
   );
 }

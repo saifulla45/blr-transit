@@ -111,6 +111,7 @@ export function CinematicNetwork({
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
 
     let ctx: { revert: () => void } | null = null;
+    let resize: ResizeObserver | null = null;
     let cancelled = false;
 
     (async () => {
@@ -141,7 +142,7 @@ export function CinematicNetwork({
           scrollTrigger: {
             trigger: node,
             start: 'top top',
-            end: '+=240%',
+            end: '+=180%',
             // Pinned, so the drawing holds still while the scroll drives it.
             pin: true,
             // A number rather than `true`: the catch-up smooths the step
@@ -184,9 +185,19 @@ export function CinematicNetwork({
               start + CAPTION_FADE + CAPTION_HOLD);
         });
       }, node);
+
+      // Cards above this section arrive after load (the ride card once a
+      // fix lands), which moves the pin's start; without a refresh the pin
+      // fires at the old offset and covers whatever now sits there.
+      let raf = 0;
+      resize = new ResizeObserver(() => {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => ScrollTrigger.refresh());
+      });
+      resize.observe(document.body);
     })();
 
-    return () => { cancelled = true; ctx?.revert(); };
+    return () => { cancelled = true; resize?.disconnect(); ctx?.revert(); };
   }, []);
 
   const purple = paths.find((p) => p.id === 'PURPLE') ?? paths[0];
@@ -248,7 +259,7 @@ export function CinematicNetwork({
               className="cine-caption absolute inset-x-0 bottom-0"
               style={{ opacity: 0 }}
             >
-              <p className="text-[2rem] font-bold leading-none tracking-tight md:text-[3.5rem]">
+              <p className="display text-[2.75rem] leading-none md:text-[4.5rem]">
                 {c.title}
               </p>
               <p className="mt-2 text-[0.9375rem] md:text-[1.125rem]" style={{ color: 'var(--muted)' }}>

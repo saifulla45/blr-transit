@@ -71,6 +71,14 @@ export default function MapCanvas({ station, lines }: { station: Station; lines:
         zoom: 14,
         attributionControl: { compact: true },
       });
+
+    // MapLibre opens the compact attribution expanded until the first drag,
+    // which covered a fifth of a phone-sized map; start it folded to the (i).
+    map.once('load', () => {
+      const attrib = node.querySelector('.maplibregl-ctrl-attrib');
+      attrib?.classList.remove('maplibregl-compact-show');
+      attrib?.removeAttribute('open');
+    });
     } catch (err) {
       // Lockdown Mode and some managed devices fail here despite the probe.
       if (err instanceof GPUInitializationError) { setFailed(true); return; }

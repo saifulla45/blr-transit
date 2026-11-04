@@ -81,7 +81,7 @@ export function UnifiedSearch({ stations, lines }: { stations: Station[]; lines:
         onChange={(e) => { setQ(e.target.value); loadExtras(); }}
         placeholder="Search stations, bus stops, places…"
         autoComplete="off"
-        className="tap w-full px-3.5 text-[0.9375rem] outline-none"
+        className="tap min-h-[48px] w-full pl-10 pr-3.5 text-[0.9375rem] outline-none transition-[border-color,box-shadow] duration-200 focus:shadow-[0_0_0_4px_var(--accent-soft)]"
         style={{
           borderRadius: 'var(--r-md)',
           background: 'var(--surface)',
@@ -89,15 +89,20 @@ export function UnifiedSearch({ stations, lines }: { stations: Station[]; lines:
           color: 'var(--ink)',
         }}
       />
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden
+        className="pointer-events-none absolute left-3.5 top-[15px]" style={{ color: 'var(--muted)' }}>
+        <circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" />
+      </svg>
 
       {q.trim().length >= 2 && (
         <div
-          className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden"
+          className="pop-solid absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden"
           style={{
             borderRadius: 'var(--r-md)',
             background: 'var(--raised)',
             border: '1px solid var(--rule)',
-            boxShadow: '0 16px 40px rgba(0,0,0,.45)',
+            boxShadow: 'var(--shadow-pop)',
           }}
         >
           {hits.length === 0 ? (

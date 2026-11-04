@@ -64,7 +64,7 @@ export function ParkingChip({ station }: { station: Station }) {
   return (
     <span
       className="num inline-flex items-center gap-2 text-[0.75rem]"
-      style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono), monospace' }}
+      style={{ color: 'var(--muted)' }}
     >
       <span title={`${p.twoWheeler} two-wheeler spaces`}>
         <TwoWheeler /> {p.twoWheeler.toLocaleString('en-IN')}

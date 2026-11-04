@@ -22,10 +22,10 @@ export function LogoMark({ size = 56 }: { size?: number }) {
       fill="none"
       role="img"
       aria-label="Namma Commute"
-      style={{ filter: 'drop-shadow(0 2px 10px rgba(194,100,216,.45))' }}
+      
     >
       {/* Backing disc so the mark holds its own over a photograph. */}
-      <circle cx="24" cy="24" r="21" fill="#140d1c" fillOpacity="0.72" />
+      <circle cx="24" cy="24" r="21" fill="#0a0a0a" />
 
       {/* Ring as three equal arcs, one per line. Drawn with a dash pattern
           rather than three arc paths — same result, far less trigonometry to
@@ -58,19 +58,19 @@ function arc() {
 /** Mark plus wordmark, for the page header. */
 export function Logo() {
   return (
-    <span className="flex items-center gap-3 md:gap-3.5">
+    <span className="flex items-center gap-2.5 md:gap-3">
       <span className="shrink-0">
         {/* Larger on desktop where the hero has room to carry it. */}
-        <span className="block md:hidden"><LogoMark size={52} /></span>
-        <span className="hidden md:block"><LogoMark size={66} /></span>
+        <span className="block md:hidden"><LogoMark size={40} /></span>
+        <span className="hidden md:block"><LogoMark size={48} /></span>
       </span>
       <span className="leading-none">
-        <span className="block text-[1.25rem] font-bold leading-none tracking-[-0.015em] text-white md:text-[1.625rem]">
+        <span className="block text-[1.0625rem] font-bold leading-none tracking-[-0.015em] md:text-[1.25rem]">
           Namma Commute
         </span>
         <span
-          className="mt-1.5 block text-[0.625rem] font-semibold uppercase leading-none tracking-[0.2em] md:text-[0.75rem]"
-          style={{ color: 'rgba(255,255,255,.58)' }}
+          className="mt-1 block text-[0.5625rem] font-semibold uppercase leading-none tracking-[0.2em] md:text-[0.625rem]"
+          style={{ color: 'var(--muted)' }}
         >
           Our metro, Bengaluru
         </span>

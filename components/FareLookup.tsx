@@ -181,7 +181,7 @@ export function FareLookup({
                       )}
                       <span
                         className="num text-[0.9375rem] font-semibold"
-                        style={{ fontFamily: 'var(--font-mono), monospace' }}
+                        style={{ fontVariantNumeric: 'tabular-nums' }}
                       >
                         {formatRupees(o.amount)}
                       </span>
@@ -234,12 +234,12 @@ export function FareLookup({
               <h3 className="eyebrow pb-1.5">If you leave now</h3>
               <p className="text-[0.875rem]">
                 Catch the{' '}
-                <strong className="num" style={{ fontFamily: 'var(--font-mono), monospace' }}>
+                <strong className="num" style={{ fontVariantNumeric: 'tabular-nums' }}>
                   {clockParts(nextOut.scheduled).time}
                   <span className="text-[0.75rem]"> {clockParts(nextOut.scheduled).meridiem}</span>
                 </strong>{' '}
                 and reach {dest?.name} around{' '}
-                <strong className="num" style={{ fontFamily: 'var(--font-mono), monospace' }}>
+                <strong className="num" style={{ fontVariantNumeric: 'tabular-nums' }}>
                   {clockParts(nextOut.scheduled + journey[0]).time}
                   <span className="text-[0.75rem]">
                     {' '}{clockParts(nextOut.scheduled + journey[0]).meridiem}
@@ -304,7 +304,7 @@ export function FareLookup({
                         </span>
                         <span
                           className="num text-[0.9375rem] font-semibold"
-                          style={{ fontFamily: 'var(--font-mono), monospace' }}
+                          style={{ fontVariantNumeric: 'tabular-nums' }}
                         >
                           {formatRupees(p.amount)}
                         </span>
@@ -351,7 +351,7 @@ function Figure({ label, value, unit }: { label: string; value: string; unit?: s
       <dt className="eyebrow">{label}</dt>
       <dd
         className="num mt-1 flex items-baseline gap-1 whitespace-nowrap text-[1.5rem] font-semibold leading-none"
-        style={{ fontFamily: 'var(--font-mono), monospace' }}
+        style={{ fontVariantNumeric: 'tabular-nums' }}
       >
         {value}
         {unit && (

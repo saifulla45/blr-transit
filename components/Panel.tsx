@@ -2,8 +2,9 @@
  * Shared card for station-page sections.
  *
  * The page was a stack of headings and hairlines, which reads as undifferentiated
- * text. A card gives each section an edge, and the tinted icon chip gives it an
- * identity you can find while scrolling.
+ * text. A card gives each section an edge. Every chip is the brand teal — a
+ * different colour per section read as noise — and the departure board alone
+ * passes its line colour.
  */
 export function Panel({
   icon, title, meta, accent, children, id,
@@ -16,7 +17,9 @@ export function Panel({
   children: React.ReactNode;
   id?: string;
 }) {
-  const tint = accent ?? 'var(--accent)';
+  const [chipA, chipB] = accent
+    ? [accent, `color-mix(in srgb, ${accent} 70%, #01292a)`]
+    : ['#0b5556', '#013536'];
 
   return (
     <section
@@ -24,34 +27,27 @@ export function Panel({
       // No overflow-hidden: it clipped the search suggestions inside this card.
       // Nothing here needs clipping — the header has no fill or radius of its
       // own, only a bottom border.
-      className="scroll-mt-16"
-      style={{
-        borderRadius: 'calc(var(--r-md) * 2)',
-        background: 'var(--surface)',
-        border: '1px solid var(--rule)',
-      }}
+      className="card scroll-mt-20"
     >
-      <header
-        className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3"
-        style={{ borderBottom: '1px solid var(--rule)' }}
-      >
+      <header className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 pb-2 pt-4 md:px-5">
         <span
-          className="flex h-7 w-7 shrink-0 items-center justify-center"
-          style={{
-            borderRadius: 'var(--r-md)',
-            // Tinted rather than solid: several saturated chips down the page
-            // would compete with the line colours that carry real meaning.
-            background: `color-mix(in srgb, ${tint} 16%, transparent)`,
-            color: tint,
-          }}
+          className="chip-grad h-9 w-9 shrink-0"
+          style={{ ['--chip-a' as string]: chipA, ['--chip-b' as string]: chipB }}
         >
           {icon}
         </span>
-        <h2 className="text-[0.9375rem] font-semibold">{title}</h2>
-        {meta && <span className="ml-auto text-[0.75rem]" style={{ color: 'var(--muted)' }}>{meta}</span>}
+        <h2 className="text-[1.125rem] font-bold tracking-[-0.02em]">{title}</h2>
+        {meta && (
+          <span
+            className="ml-auto rounded-full px-2.5 py-1 text-[0.6875rem] font-medium"
+            style={{ color: 'var(--muted)', background: 'var(--sunken)', border: '1px solid var(--rule)' }}
+          >
+            {meta}
+          </span>
+        )}
       </header>
 
-      <div className="px-4 py-3">{children}</div>
+      <div className="px-4 pb-4 pt-2 md:px-5">{children}</div>
     </section>
   );
 }

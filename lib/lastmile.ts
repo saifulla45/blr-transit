@@ -166,23 +166,64 @@ export function rideOptions(straightLineKm: number, hour: number): RideOption[] 
   ];
 }
 
+export type Platform = 'android' | 'ios' | 'other';
+
+/** How much of the trip an app link fills in when it opens. */
+export type Prefill = 'trip' | 'none';
+
+export interface RideAppLink {
+  name: string;
+  href: string;
+  /** True when the link carries pickup and destination into the app. */
+  hasDestination: boolean;
+  prefill: Prefill;
+}
+
+/** Best guess from the user agent; anything unrecognised gets plain web links. */
+export function detectPlatform(userAgent: string): Platform {
+  if (/android/i.test(userAgent)) return 'android';
+  if (/iphone|ipad|ipod/i.test(userAgent)) return 'ios';
+  return 'other';
+}
+
 /**
- * Deep links that open the app when installed and fall back to the web or
- * store when not. Each was checked to resolve rather than 404.
+ * An Android intent URL: opens the named app by its own scheme, and sends
+ * the browser to `fallback` when the app is not installed.
  *
- * Only Uber documents a link that fills in the trip. Ola's web URL opens the
- * app but the app drops its parameters, and Rapido and Namma Yatri publish
- * no format, so those three open cold rather than claiming a destination.
+ * Chrome on Android hands an https universal link to Uber without its query
+ * string often enough that riders saw an empty booking screen. Addressing
+ * the app's own scheme through an intent keeps the parameters attached.
+ */
+function androidIntent(schemeUrl: string, pkg: string, fallback: string): string {
+  const [scheme, rest] = schemeUrl.split('://');
+  return `intent://${rest}#Intent;scheme=${scheme};package=${pkg};`
+    + `S.browser_fallback_url=${encodeURIComponent(fallback)};end`;
+}
+
+/**
+ * Links that open each ride app with the trip filled in where the app
+ * supports it: pickup at the rider's fix, destination at the station.
  *
- * `from` is the rider's fix, handed only to the app they tapped; without it
- * Uber falls back to the phone's own location.
+ * Verified by loading each web URL in a browser (2026-11-04): Uber's
+ * /go/product-selection page and Ola's book.olacabs.com both showed the
+ * pickup and drop addresses already filled in. The app links follow each
+ * company's documented format: Uber's setPickup, and Ola's olacabs:// scheme
+ * and olawebcdn.com universal link. Android opens the app through an intent
+ * and falls back to a web page when the app is missing.
+ *
+ * Namma Yatri takes a destination on Android through a geo: link (see
+ * geoIntent); its iPhone app and Rapido publish no way to pass a trip, so
+ * those links only open the app and the UI copies the station name.
  */
 export function rideAppLinks(
   lat: number,
   lon: number,
   stationName: string,
   from?: { lat: number; lon: number },
-) {
+  platform: Platform = 'other',
+): RideAppLink[] {
+  const destination = `${stationName} Metro Station`;
+
   const uber = new URLSearchParams({ action: 'setPickup' });
   if (from) {
     uber.set('pickup[latitude]', String(from.lat));
@@ -193,20 +234,97 @@ export function rideAppLinks(
   }
   uber.set('dropoff[latitude]', String(lat));
   uber.set('dropoff[longitude]', String(lon));
-  uber.set('dropoff[nickname]', `${stationName} Metro`);
-  const ola = new URLSearchParams({
-    drop_lat: String(lat),
-    drop_lng: String(lon),
-    category: 'auto',
-  });
+  uber.set('dropoff[nickname]', destination);
+
+  // Uber's web booking reads JSON places; without a fix it asks for pickup.
+  const uberWebQuery = new URLSearchParams();
+  if (from) {
+    uberWebQuery.set('pickup', JSON.stringify({ latitude: from.lat, longitude: from.lon, addressLine1: 'Your location' }));
+  }
+  uberWebQuery.set('drop[0]', JSON.stringify({ latitude: lat, longitude: lon, addressLine1: destination }));
+  const uberWeb = `https://m.uber.com/go/product-selection?${uberWebQuery.toString()}`;
+
+  const uberHref = platform === 'android'
+    ? androidIntent(`uber://?${uber.toString()}`, 'com.ubercab', uberWeb)
+    // iOS hands the universal link to the installed app with its parameters.
+    : platform === 'ios' ? `https://m.uber.com/ul/?${uber.toString()}`
+    : uberWeb;
+
+  const ola = new URLSearchParams();
+  if (from) {
+    ola.set('lat', String(from.lat));
+    ola.set('lng', String(from.lon));
+  }
+  ola.set('drop_lat', String(lat));
+  ola.set('drop_lng', String(lon));
+  ola.set('category', 'auto');
+  ola.set('utm_source', 'nammacommute');
+  const olaWeb = `https://book.olacabs.com/?${ola.toString()}&dsw=yes`;
+  ola.set('drop_address', destination);
+  ola.set('landing_page', 'bk');
+  // Ola's documented universal link: opens the installed app with the trip,
+  // where book.olacabs.com loses it at Ola's own "Open in app" button.
+  const olaUniversal = `https://olawebcdn.com/assets/ola-universal-link.html?${ola.toString()}`;
+
+  const olaHref = platform === 'android'
+    ? androidIntent(`olacabs://app/launch?${ola.toString()}`, 'com.olacabs.customer', olaUniversal)
+    : platform === 'ios' ? olaUniversal
+    : olaWeb;
+
   return [
     // Bengaluru's own driver-owned, zero-commission app. Listed first on a
     // civic tool because it is the option that keeps the fare with the driver.
-    { name: 'Namma Yatri', href: 'https://nammayatri.in/', hasDestination: false },
-    { name: 'Rapido', href: 'https://www.rapido.bike/', hasDestination: false },
-    { name: 'Uber', href: `https://m.uber.com/ul/?${uber.toString()}`, hasDestination: true },
-    { name: 'Ola', href: `https://book.olacabs.com/?${ola.toString()}`, hasDestination: false },
+    {
+      name: 'Namma Yatri',
+      href: platform === 'android'
+        ? geoIntent(lat, lon, 'in.juspay.nammayatri', NAMMA_YATRI_APP_LINK)
+        : NAMMA_YATRI_APP_LINK,
+      hasDestination: platform === 'android',
+      prefill: platform === 'android' ? 'trip' : 'none',
+    },
+    {
+      name: 'Rapido',
+      href: platform === 'android'
+        ? geoIntent(lat, lon, 'com.rapido.passenger', RAPIDO_APP_LINK)
+        : platform === 'ios' ? RAPIDO_APP_LINK : 'https://www.rapido.bike/',
+      // Unconfirmed whether Rapido reads the location, so the UI still copies it.
+      hasDestination: false,
+      prefill: 'none',
+    },
+    { name: 'Uber', href: uberHref, hasDestination: true, prefill: 'trip' },
+    { name: 'Ola', href: olaHref, hasDestination: true, prefill: 'trip' },
   ];
+}
+
+/*
+  App links for the two apps that take no trip details.
+
+  Each domain below publishes the files iOS (apple-app-site-association)
+  and Android (assetlinks.json) read to hand a tapped link to the installed
+  app, checked 2026-11-04:
+    rapido.onelink.me/Ewte/*  bike.rapido.customer (iOS), com.rapido.passenger (Android)
+    nammayatri.in/*           in.juspay.nammayatri on both
+  So the tap opens the app itself, not a store page or a website asking to
+  install what is already installed. Without the app, AppsFlyer and Namma
+  Yatri send the rider to the store or their site.
+*/
+const RAPIDO_APP_LINK = 'https://rapido.onelink.me/Ewte/nammacommute';
+// The Android app only claims /u and /refer, not the bare domain.
+const NAMMA_YATRI_APP_LINK = 'https://nammayatri.in/u';
+
+/**
+ * A geo: location aimed at one app on Android.
+ *
+ * Namma Yatri's open-source rider app (MainActivity.handleGeoSchemeData,
+ * read 2026-11-04) turns a browsable geo: link into its destination and
+ * keeps the rider's current location as pickup. It splits the part after
+ * "geo:" on commas and reads parts 0 and 2, so the format is exactly
+ * "LAT,LON?q=LAT,LON" with no label: "(Name)" would break the longitude.
+ * Chrome uses the fallback when the app is missing or does not take geo:.
+ */
+function geoIntent(lat: number, lon: number, pkg: string, fallback: string): string {
+  return `intent:${lat},${lon}?q=${lat},${lon}#Intent;scheme=geo;package=${pkg};`
+    + `S.browser_fallback_url=${encodeURIComponent(fallback)};end`;
 }
 
 export interface AppMode {
@@ -216,10 +334,7 @@ export interface AppMode {
   high: number;
 }
 
-export interface RideApp {
-  name: string;
-  href: string;
-  hasDestination: boolean;
+export interface RideApp extends RideAppLink {
   modes: AppMode[];
   note?: string;
 }
@@ -249,6 +364,7 @@ export function rideApps(
   lon: number,
   stationName: string,
   from?: { lat: number; lon: number },
+  platform: Platform = 'other',
 ): RideApp[] {
   const options = rideOptions(straightLineKm, hour);
   const get = (mode: RideMode) => options.find((o) => o.mode === mode)!;
@@ -268,7 +384,7 @@ export function rideApps(
   const bikeMode: AppMode = { kind: 'bike', label: 'Bike', low: bike.low, high: bike.high };
   const cabMode: AppMode = { kind: 'cab', label: 'Cab', low: cab.low, high: cab.high };
 
-  const links = rideAppLinks(lat, lon, stationName, from);
+  const links = rideAppLinks(lat, lon, stationName, from, platform);
   const href = (name: string) => links.find((l) => l.name === name)!;
 
   return [
@@ -300,3 +416,9 @@ export function rideApps(
  * a tap on an app the reader already has.
  */
 export const WALKABLE_KM = 0.7;
+
+/**
+ * Beyond this, walking minutes stop being advice: the cards drop the walk
+ * option and the time, and point to a ride instead. About 50 minutes on foot.
+ */
+export const WALK_TOO_FAR_KM = 3;

@@ -1,55 +1,93 @@
 @import "tailwindcss";
 
+/* Tailwind ships its own --font-mono on :root, which silently replaced the
+   loaded face with Courier; route its token to the self-hosted Geist Mono. */
+@theme {
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
 /*
   Tokens. Every colour is defined on bare :root first so the un-stamped
   "system" theme always resolves; the dark blocks only redefine tokens.
 */
 :root {
-  /* Neutrals carry a faint violet bias rather than being pure grey — the
-     network's flagship line is Purple, so the greys are tuned to it. */
-  --ground: #fbfafc;
-  --surface: #f4f2f7;
-  --raised: #ffffff;
-  --rule: #e2dee8;
-  --ink: #1a161f;
-  --muted: #635b6e;
-  --accent: #8c2877;      /* BMRCL Purple line */
+  /* Deep teal into mist, with one coral for the primary action. Teal carries
+     headers, links and the active state; mist and white carry the content;
+     coral is used only where we want a tap. The metro line colours keep
+     their meaning throughout. */
+  --ground: #f2f6f6;
+  --surface: #ffffff;
+  --raised: #f8fbfb;
+  --sunken: #e9f0f0;
+  --rule: #dbe6e6;
+  --ink: #0c2425;
+  --muted: #557071;
+  --accent: #0d6b6c;      /* teal, links and quiet emphasis */
+  --accent-2: #f0625c;    /* coral, primary actions only */
+  --accent-3: #0b5556;
+  --gold: #f0625c;
   --on-accent: #ffffff;
+  --accent-soft: color-mix(in srgb, var(--accent) 9%, transparent);
+  --brand-gradient: linear-gradient(160deg, #013536 0%, #0b5556 100%);
+  --gold-gradient: linear-gradient(160deg, #f47a70 0%, #ec5751 100%);
 
   /* Semantic, deliberately not the accent hue. */
-  --good: #1f7a4d;
-  --warn: #8a5a08;
+  --good: #23946b;
+  --warn: #b45309;
 
-  --r-sm: 3px;
-  --r-md: 6px;
+  --r-sm: 6px;
+  --r-md: 12px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+
+  --shadow-card: 0 1px 2px rgba(6, 40, 41, .05), 0 10px 28px -16px rgba(6, 40, 41, .18);
+  --shadow-pop: 0 2px 6px rgba(6, 40, 41, .07), 0 26px 56px -24px rgba(6, 40, 41, .32);
+  --glow: 0 10px 26px -12px rgba(1, 53, 54, .55);
+
+  --ease-out: cubic-bezier(.22, .61, .36, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --ground: #141118;
-    --surface: #1d1923;
-    --raised: #232030;
-    --rule: #302a38;
-    --ink: #f2eff5;
-    --muted: #9b93a6;
-    --accent: #d07ac0;
-    --on-accent: #1a161f;
-    --good: #4ec98a;
-    --warn: #e0ab4a;
+    --ground: #071415;
+    --surface: #0d1f20;
+    --raised: #12292a;
+    --sunken: #061011;
+    --rule: rgba(180, 230, 230, .1);
+    --ink: #eaf3f3;
+    --muted: #9bb3b3;
+    --accent: #5ec4c0;
+    --accent-2: #f47c74;
+    --accent-3: #1f7f80;
+    --gold: #f47c74;
+    --on-accent: #ffffff;
+    --good: #4cc79a;
+    --warn: #f0b04a;
+    --shadow-card: inset 0 1px 0 rgba(255, 255, 255, .03), 0 12px 32px -16px rgba(0, 0, 0, .7);
+    --shadow-pop: inset 0 1px 0 rgba(255, 255, 255, .05), 0 28px 60px -20px rgba(0, 0, 0, .85);
+    --glow: 0 10px 28px -12px rgba(0, 0, 0, .8);
   }
 }
 
 :root[data-theme="dark"] {
-  --ground: #141118;
-  --surface: #1d1923;
-  --raised: #232030;
-  --rule: #302a38;
-  --ink: #f2eff5;
-  --muted: #9b93a6;
-  --accent: #d07ac0;
-  --on-accent: #1a161f;
-  --good: #4ec98a;
-  --warn: #e0ab4a;
+  --ground: #071415;
+  --surface: #0d1f20;
+  --raised: #12292a;
+  --sunken: #061011;
+  --rule: rgba(180, 230, 230, .1);
+  --ink: #eaf3f3;
+  --muted: #9bb3b3;
+  --accent: #5ec4c0;
+  --accent-2: #f47c74;
+  --accent-3: #1f7f80;
+  --gold: #f47c74;
+  --on-accent: #ffffff;
+  --good: #4cc79a;
+  --warn: #f0b04a;
+  --shadow-card: inset 0 1px 0 rgba(255, 255, 255, .03), 0 12px 32px -16px rgba(0, 0, 0, .7);
+  --shadow-pop: inset 0 1px 0 rgba(255, 255, 255, .05), 0 28px 60px -20px rgba(0, 0, 0, .85);
+  --glow: 0 10px 28px -12px rgba(0, 0, 0, .8);
 }
 
 html { color-scheme: light dark; }
@@ -60,75 +98,72 @@ body {
   background: var(--ground);
   color: var(--ink);
   -webkit-text-size-adjust: 100%;
+  /* Full-bleed decorative washes use 100vw, which includes the scrollbar. */
+  overflow-x: clip;
+}
+
+/* Translucent bar: the app bar and anything floating over content. */
+.glass {
+  background: color-mix(in srgb, var(--ground) 82%, transparent);
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+}
+
+/* The emphasised phrase of a headline, lit with the brand gradient. */
+.headline-em {
+  font-style: italic;
+  color: #a6d8d4;
 }
 
 /*
-  Dark "techflux" surface, used for the landing page only.
-  Redefining the tokens on a wrapper means every component inside adapts with no
-  per-component dark variants — the station pages keep the light palette, which
-  is what you actually read outdoors in daylight.
+  The aurora: the brand gradient with soft light sources, behind the home
+  hero and the station header. Tokens are redefined inside it so every
+  component placed on it (status pill, inputs, stats) reads white-on-colour.
 */
-.surface-dark {
-  --ground: #0b0710;
-  --surface: rgba(255, 255, 255, 0.055);
-  /* Opaque on purpose: --raised backs popovers and menus, and a translucent
-     value let the stats row show straight through the search suggestions. */
-  --raised: #1b1426;
-  --rule: rgba(255, 255, 255, 0.11);
-  --ink: #f4f0f8;
-  --muted: #9b90ad;
-  --accent: #c264d8;
-  --on-accent: #14091c;
-  --good: #4ed08a;
-  --warn: #e8b054;
-  background: var(--ground);
+.aurora {
+  --ink: #ffffff;
+  --muted: rgba(255, 255, 255, .78);
+  --rule: rgba(255, 255, 255, .22);
+  --surface: rgba(255, 255, 255, .12);
+  --raised: rgba(255, 255, 255, .14);
+  --sunken: rgba(255, 255, 255, .10);
+  --good: #8be0bb;
+  --accent: #ffb3ad;
+  position: relative;
+  isolation: isolate;
+  color: var(--ink);
+  background: linear-gradient(180deg, #011a1b 0%, #013536 38%, #0b5254 72%, #2f6e71 100%);
+}
+.aurora::after {
+  /* A fine grain so the gradient reads as light, not as a flat fill. */
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: .35;
+  background-image: radial-gradient(rgba(255, 255, 255, .07) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: linear-gradient(to bottom, #000, transparent 85%);
+  -webkit-mask-image: linear-gradient(to bottom, #000, transparent 85%);
+  pointer-events: none;
+}
+
+/* Text and controls that sit directly on the aurora without its background. */
+.on-colour {
+  --ink: #ffffff;
+  --muted: rgba(255, 255, 255, .78);
+  --rule: rgba(255, 255, 255, .22);
+  --surface: rgba(255, 255, 255, .14);
+  background: transparent;
   color: var(--ink);
 }
 
-/* Translucent panel over the glow field. */
-.glass {
-  background: rgba(255, 255, 255, 0.055);
-  border: 1px solid rgba(255, 255, 255, 0.11);
-  backdrop-filter: blur(14px) saturate(1.3);
-  -webkit-backdrop-filter: blur(14px) saturate(1.3);
-}
-
-/* Violet light sources behind the hero. Pure CSS, no image weight. */
-.glow-field::before,
-.glow-field::after {
-  content: "";
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  filter: blur(90px);
-}
-.glow-field::before {
-  width: 40rem; height: 40rem;
-  top: -16rem; left: -10rem;
-  background: radial-gradient(circle, rgba(170, 60, 200, 0.38), transparent 70%);
-}
-.glow-field::after {
-  width: 34rem; height: 34rem;
-  bottom: -14rem; right: -8rem;
-  background: radial-gradient(circle, rgba(88, 40, 180, 0.34), transparent 70%);
-}
-
-/* Faint engineering grid — texture without noise. */
-.grid-texture {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 40%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 40%, transparent 100%);
-}
-
-/* Headline that fades from full white into the accent. */
-.gradient-text {
-  background: linear-gradient(170deg, #ffffff 30%, #d79bea 75%, #a855c9 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+/* Frosted panel on top of the aurora. */
+.frost {
+  background: rgba(255, 255, 255, .12);
+  border: 1px solid rgba(255, 255, 255, .22);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
 }
 
 /*
@@ -196,7 +231,7 @@ body {
   height: 11px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: var(--ground);
+  background: var(--surface);
   border: 3px solid var(--rail-color);
 }
 
@@ -277,14 +312,20 @@ body {
   panel and section heading, and the large figures. Body text stays on the
   UI face, which is the one tuned for reading a phone at arm's length.
 */
-h1, h2, h3,
-.display {
-  font-family: var(--font-display), var(--font-ui), system-ui, sans-serif;
-  letter-spacing: -0.015em;
+h2, h3 {
+  font-family: var(--font-ui), system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.022em;
 }
 
-/* Bricolage runs wide at small sizes; the eyebrow stays on the UI face so
-   the uppercase tracking does not fight it. */
+/* Page and section titles in a fine serif; working UI headings stay sans. */
+h1, .section-title, .display {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+/* The uppercase label keeps open tracking; headings tighten instead. */
 .eyebrow { font-family: var(--font-ui), system-ui, sans-serif; }
 
 /*
@@ -320,4 +361,249 @@ h1, h2, h3,
 
 @media (prefers-reduced-motion: reduce) {
   .route-enter, .page-lift { animation: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   Component language.
+
+   One card, one button family, one press response, used everywhere, so the
+   site reads as a single product instead of a collection of panels.
+--------------------------------------------------------------------------- */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+}
+
+/* Inner tile on a card: a step down, not another card. */
+.tile {
+  background: var(--raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+}
+
+/* Touch feedback. Scale rather than colour, so it reads on any fill. */
+.press {
+  transition: transform 180ms var(--ease-out), box-shadow 220ms var(--ease-out),
+              background-color 180ms var(--ease-out), border-color 180ms var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+.press:active { transform: scale(.98); }
+
+@media (hover: hover) and (pointer: fine) {
+  .lift:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--rule));
+    box-shadow: var(--shadow-pop);
+  }
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  min-height: 48px;
+  padding: 0 1.25rem;
+  border-radius: var(--r-md);
+  font-weight: 650;
+  color: #ffffff;
+  background: var(--gold-gradient);
+  box-shadow: 0 10px 24px -12px rgba(236, 87, 81, .7), inset 0 1px 0 rgba(255, 255, 255, .25);
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-ghost:hover { background: var(--sunken); }
+}
+
+/* On the aurora the primary action is a bright white key. */
+.aurora .btn-primary {
+  color: #ffffff;
+  background: var(--gold-gradient);
+  box-shadow: 0 14px 30px -14px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .35);
+}
+.btn-primary:disabled { opacity: .6; }
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  min-height: 44px;
+  padding: 0 1rem;
+  border-radius: var(--r-md);
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+}
+
+/* Round icon button: back, map, close. */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  border: 1px solid var(--rule);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Horizontal scrollers: no scrollbar, edges fade so overflow is visible. */
+.scroll-x {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+}
+.scroll-x::-webkit-scrollbar { display: none; }
+.scroll-x > * { scroll-snap-align: start; }
+.fade-x {
+  mask-image: linear-gradient(to right, transparent 0, #000 12px, #000 calc(100% - 28px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 12px, #000 calc(100% - 28px), transparent 100%);
+}
+
+/* Section heading pair: eyebrow plus a display title. */
+.section-title {
+  font-size: 1.75rem;
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+/* The card that leads a screen: a gradient hairline in the brand colours. */
+.ring-accent {
+  position: relative;
+  border-color: transparent;
+  box-shadow: var(--shadow-pop);
+}
+.ring-accent::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  padding: 1.5px;
+  border-radius: inherit;
+  background: linear-gradient(160deg, #0b5556, rgba(11, 85, 86, .12) 40%, rgba(166, 216, 212, .2) 70%, #a6d8d4);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Vivid icon chip: a section's colour as a small gradient tile. */
+.chip-grad {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--chip-a), var(--chip-b));
+  box-shadow: 0 6px 16px -6px var(--chip-a);
+}
+
+/* Toast that rises from the bottom edge. */
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, 16px) scale(.96); }
+  to   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  z-index: 60;
+  transform: translateX(-50%);
+  animation: toast-in 320ms var(--ease-spring) both;
+}
+
+/* Skeleton shimmer for client-only blocks that arrive after hydration. */
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to   { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--raised) 25%, var(--sunken) 50%, var(--raised) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: var(--r-md);
+}
+
+/* The route line in the ride card: pickup dot, dashed track, station node. */
+.route-track {
+  width: 2px;
+  flex: 1;
+  background-image: linear-gradient(to bottom, var(--muted) 50%, transparent 50%);
+  background-size: 2px 6px;
+  opacity: .5;
+}
+
+/* Long-form pages (About, Privacy): a measured column with clear rhythm. */
+.prose-nc { font-size: 1rem; line-height: 1.7; color: var(--ink); }
+.prose-nc > * + * { margin-top: 1rem; }
+.prose-nc h2 {
+  margin-top: 2.5rem;
+  font-size: 1.25rem;
+  line-height: 1.3;
+}
+.prose-nc h2 + * { margin-top: .75rem; }
+.prose-nc p, .prose-nc li { color: color-mix(in srgb, var(--ink) 82%, var(--ground)); }
+.prose-nc strong { color: var(--ink); font-weight: 600; }
+.prose-nc a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.prose-nc ul { display: flex; flex-direction: column; gap: .5rem; padding-left: 1.25rem; list-style: disc; }
+.prose-nc li::marker { color: var(--muted); }
+
+
+/* Popovers opened from inside the aurora keep a solid, readable surface. */
+.pop-solid {
+  --ink: #0c2425; --muted: #557071; --rule: #dbe6e6;
+  --surface: #ffffff; --raised: #ffffff; --sunken: #e9f0f0; --accent: #0d6b6c;
+  color: var(--ink);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .pop-solid {
+    --ink: #eaf3f3; --muted: #9bb3b3; --rule: rgba(180, 230, 230, .12);
+    --surface: #12292a; --raised: #12292a; --sunken: #0d1f20; --accent: #5ec4c0;
+  }
+}
+:root[data-theme="dark"] .pop-solid {
+  --ink: #eaf3f3; --muted: #9bb3b3; --rule: rgba(180, 230, 230, .12);
+  --surface: #12292a; --raised: #12292a; --sunken: #0d1f20; --accent: #5ec4c0;
+}
+
+/*
+  Glass orbs: soft spheres of light behind the teal headers. Pure CSS, a
+  slow float, and a bright rim with a faint chromatic edge where the light
+  catches it. Decorative only and frozen under reduced motion.
+*/
+.orbs { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+/* Soft pools of light, not glass discs: at phone width a hard rim cut
+   straight across the headline and read as a rendering fault. */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(150, 214, 216, .30), rgba(150, 214, 216, .10) 55%, transparent 100%);
+  filter: blur(8px);
+  animation: orb-float 16s ease-in-out infinite;
+}
+.orb-a { width: min(150vw, 980px); aspect-ratio: 1; left: 50%; top: -62%; margin-left: calc(min(150vw, 980px) / -2); }
+.orb-b { width: min(120vw, 760px); aspect-ratio: 1; left: 50%; bottom: -70%; margin-left: calc(min(120vw, 760px) / -2); animation-delay: -8s; }
+@keyframes orb-float {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, 14px, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .orb { animation: none; } }
+
+/* The teal header dissolves into the misty page instead of ending on a line. */
+.mist-fade {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 7rem;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--ground) 55%, transparent) 60%, var(--ground));
 }

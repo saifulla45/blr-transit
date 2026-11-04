@@ -40,7 +40,7 @@ export function ParkingPanel({
             />
           </div>
 
-          <table className="num mt-5 w-full text-[0.8125rem]" style={{ fontFamily: 'var(--font-mono), monospace' }}>
+          <table className="num mt-5 w-full text-[0.8125rem]" style={{ fontVariantNumeric: 'tabular-nums' }}>
             <caption className="sr-only">Parking charges</caption>
             <thead>
               <tr className="eyebrow" style={{ color: 'var(--muted)' }}>
@@ -81,7 +81,7 @@ function Capacity({
       {value > 0 ? (
         <div
           className="num mt-1 text-[1.75rem] font-semibold leading-none"
-          style={{ fontFamily: 'var(--font-mono), monospace' }}
+          style={{ fontVariantNumeric: 'tabular-nums' }}
         >
           {value.toLocaleString('en-IN')}
           <span className="ml-1 text-[0.75rem] font-normal" style={{ color: 'var(--muted)' }}>

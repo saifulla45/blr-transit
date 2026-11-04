@@ -70,6 +70,14 @@ export default function NetworkMapCanvas({
         zoom: focus?.zoom ?? 10.4,
         attributionControl: { compact: true },
       });
+
+    // MapLibre opens the compact attribution expanded until the first drag,
+    // which covered a fifth of a phone-sized map; start it folded to the (i).
+    map.once('load', () => {
+      const attrib = node.querySelector('.maplibregl-ctrl-attrib');
+      attrib?.classList.remove('maplibregl-compact-show');
+      attrib?.removeAttribute('open');
+    });
     } catch (err) {
       if (err instanceof GPUInitializationError) { setFailed(true); return; }
       throw err;

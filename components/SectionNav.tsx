@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BusIcon, ParkingIcon, PinIcon, TicketIcon, TrainIcon } from './icons';
 
 // Same order as the page itself, or the highlight tracks the wrong section.
@@ -17,6 +17,15 @@ const SECTIONS = [
 export function SectionNav({ hasBuses }: { hasBuses: boolean }) {
   const items = SECTIONS.filter((s) => s.id !== 'buses' || hasBuses);
   const [active, setActive] = useState(items[0].id);
+  const listRef = useRef<HTMLUListElement | null>(null);
+
+  // Keep the highlighted section visible in the scrolling bar on a phone.
+  useEffect(() => {
+    const list = listRef.current;
+    const link = list?.querySelector<HTMLElement>(`a[href="#${active}"]`);
+    if (!list || !link) return;
+    list.scrollTo({ left: link.offsetLeft - (list.clientWidth - link.offsetWidth) / 2, behavior: 'smooth' });
+  }, [active]);
 
   useEffect(() => {
     const io = new IntersectionObserver(
@@ -38,21 +47,27 @@ export function SectionNav({ hasBuses }: { hasBuses: boolean }) {
 
   return (
     <nav
-      className="sticky top-0 z-20 -mx-5 mb-1 px-5 py-2 backdrop-blur md:-mx-8 md:px-8"
-      style={{ background: 'color-mix(in srgb, var(--ground) 88%, transparent)' }}
+      className="sticky top-[calc(3.5rem+max(0.5rem,env(safe-area-inset-top)))] z-20 -mx-5 mb-1 px-5 py-2.5 md:-mx-8 md:px-8"
+      style={{
+        background: 'color-mix(in srgb, var(--ground) 82%, transparent)',
+        backdropFilter: 'blur(16px) saturate(1.4)',
+        WebkitBackdropFilter: 'blur(16px) saturate(1.4)',
+      }}
       aria-label="Sections"
     >
-      <ul className="flex overflow-x-auto">
+      <ul ref={listRef} className="scroll-x relative flex w-fit max-w-full gap-1 rounded-full p-1"
+        style={{ background: 'var(--surface)', border: '1px solid var(--rule)', boxShadow: 'var(--shadow-card)' }}>
         {items.map((s) => (
           <li key={s.id}>
             <a
               href={`#${s.id}`}
               aria-current={active === s.id ? 'true' : undefined}
-              className="flex shrink-0 items-center gap-1 px-2 py-1.5 text-[0.8125rem] font-medium transition-colors"
+              className="press flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-1.5 text-[0.8125rem] font-semibold"
               style={{
-                borderRadius: 'var(--r-md)',
-                background: active === s.id ? 'var(--ink)' : 'transparent',
-                color: active === s.id ? 'var(--ground)' : 'var(--muted)',
+                borderRadius: 999,
+                background: active === s.id ? 'var(--brand-gradient)' : 'transparent',
+                color: active === s.id ? '#ffffff' : 'var(--muted)',
+                boxShadow: active === s.id ? 'var(--glow)' : 'none',
               }}
             >
               <s.Icon size={14} />

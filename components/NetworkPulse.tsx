@@ -53,20 +53,20 @@ export function NetworkPulse({
           {running && (
             <span
               className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-60"
-              style={{ background: running ? '#4ec98a' : '#9b93a6' }}
+              style={{ background: running ? 'var(--good)' : 'var(--muted)' }}
             />
           )}
           <span
             className="relative inline-flex h-2 w-2 rounded-full"
-            style={{ background: running ? '#4ec98a' : '#9b93a6' }}
+            style={{ background: running ? 'var(--good)' : 'var(--muted)' }}
           />
         </span>
-        <span className="font-semibold text-white">
+        <span className="font-semibold">
           {running ? 'Trains running now' : 'Network closed'}
         </span>
       </span>
 
-      <span className="text-white/60">
+      <span style={{ color: 'var(--muted)' }}>
         {running
           ? <>{PATTERN_LABEL[pattern]} · last trains {formatMinutes(span.lastTrain)}</>
           : <>First trains {formatMinutes(span.firstTrain)}</>}
