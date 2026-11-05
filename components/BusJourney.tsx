@@ -124,9 +124,14 @@ export function BusJourney({ lat, lon }: { lat: number; lon: number }) {
   if (loading || !network) {
     return (
       <Shell panelRef={panelRef}>
-        <p className="text-[0.8125rem]" style={{ color: 'var(--muted)' }}>
-          {loading ? 'Loading the bus network…' : 'Bus routes load as this comes into view…'}
-        </p>
+        {/* The form's shape while the network loads, so nothing jumps. */}
+        <div className="flex flex-col gap-2" role="status">
+          <span className="sr-only">Loading the bus network…</span>
+          <span className="skeleton h-3 w-20" />
+          <span className="skeleton h-11 w-full" />
+          <span className="skeleton mt-2 h-3 w-24" />
+          <span className="skeleton h-11 w-full" />
+        </div>
       </Shell>
     );
   }
@@ -321,7 +326,7 @@ function Shell({
     <section ref={panelRef} className="card p-4 md:p-5">
       <div className="flex items-center gap-3 pb-3.5">
         <span className="chip-grad h-9 w-9 shrink-0"
-          style={{ ['--chip-a' as string]: '#1f8a7e', ['--chip-b' as string]: '#0f6b62' }}>
+          style={{ ['--chip-a' as string]: '#0b5556', ['--chip-b' as string]: '#013536' }}>
           <BusIcon size={17} />
         </span>
         <div>

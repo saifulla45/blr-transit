@@ -8,8 +8,8 @@ import type { NetworkMapProps } from './NetworkMapCanvas';
 const Canvas = dynamic(() => import('./NetworkMapCanvas'), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full items-center justify-center text-sm" style={{ color: 'var(--muted)' }}>
-      Loading map…
+    <div className="skeleton h-full w-full" style={{ borderRadius: 0 }} role="status">
+      <span className="sr-only">Loading map…</span>
     </div>
   ),
 });

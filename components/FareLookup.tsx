@@ -6,12 +6,14 @@ import type {
   CalendarOverrides, FareWindows, Line, Station, StationLite, StationTimetable, TravelPass,
 } from '@/types/transit';
 import {
-  WHATSAPP_TICKET_URL, fareOptions, formatRupees, isPeak, offPeakSaving, type FareTuple,
+  fareOptions, formatRupees, isPeak, offPeakSaving, type FareTuple,
 } from '@/lib/fares';
-import { nextDepartures } from '@/lib/departures';
-import { lastTrainToward } from '@/lib/lastTrain';
+import { nextDepartures, thisService } from '@/lib/departures';
+import { groupToward, lastTrainToward } from '@/lib/lastTrain';
+import { useWalkMinutes } from '@/lib/useWalkMinutes';
 import { clockParts, formatMinutes, nowInBengaluru, servicePatternFor } from '@/lib/time';
-import { InterchangeIcon, TicketIcon, WhatsAppIcon } from './icons';
+import { InterchangeIcon, TicketIcon } from './icons';
+import { WhatsAppTicket } from './WhatsAppTicket';
 import { JourneyPath } from './JourneyPath';
 import { NetworkMap } from './NetworkMap';
 import { Panel } from './Panel';
@@ -35,6 +37,7 @@ export function FareLookup({
   passes: TravelPass[];
 }) {
   const router = useRouter();
+  const walk = useWalkMinutes(origin.lat, origin.lon);
   const params = useSearchParams();
   // A journey in the URL survives a reload and can be sent to someone else.
   const initial = stations.find((s) => s.id === params.get('to')) ?? null;
@@ -68,10 +71,24 @@ export function FareLookup({
 
   // The train you'd actually catch, and when it gets you there.
   const groups = now
-    ? nextDepartures({ timetable, overrides, date: now.date, minutes: now.minutes, limit: 1 })
+    ? nextDepartures({ timetable, overrides, date: now.date, minutes: now.minutes, limit: 8 })
     : [];
-  const nextOut = groups.map((g) => g.upcoming[0]).filter(Boolean)
-    .sort((a, b) => a.inMinutes - b.inMinutes)[0];
+  // The next train GOING YOUR WAY. This was the soonest train in any
+  // direction, which half the time was heading away from the destination.
+  const yourWay = journey
+    ? groupToward(journey[3], groups, lines, (id) => byId.get(id)?.name)
+    : null;
+  // With a recent fix, the first train you can walk to — the timetable
+  // banner says "leave in 8 min for the 1:33", so this must not say 1:03.
+  const reachable = yourWay && !yourWay.serviceEnded
+    ? thisService(yourWay.upcoming).find((u) => walk === null || u.inMinutes >= walk)
+    : undefined;
+  // Closed, or the last train you could make has gone: then it is the first
+  // train, said as such — never tomorrow's 5:30 dressed up as "catch the".
+  const closedForYou = yourWay !== null && reachable === undefined;
+  const nextOut = closedForYou
+    ? yourWay!.upcoming.find((u) => u.firstOfDay)
+    : reachable;
   /*
     The last train GOING YOUR WAY, not the last train from this platform.
 
@@ -101,6 +118,14 @@ export function FareLookup({
         placeholder="Choose a station…"
         label={`Destination station, travelling from ${origin.name}`}
       />
+
+      {/* Without a destination the ticket button cannot exist yet; say so,
+          or nobody knows it is one pick away. */}
+      {!destId && (
+        <p className="mt-2 text-[0.75rem]" style={{ color: 'var(--muted)' }}>
+          Pick where you&rsquo;re going for the fare, the time, and a QR ticket on WhatsApp.
+        </p>
+      )}
 
       {destId && !fare && !journey && (
         <p className="mt-3 text-[0.875rem]" style={{ color: 'var(--muted)' }}>
@@ -205,35 +230,21 @@ export function FareLookup({
                 prices QR the same as a token, so a discount claim here would
                 be contradicted by the numbers beside it.
               */}
-              <a
-                href={WHATSAPP_TICKET_URL}
-                rel="noreferrer"
-                className="tap mt-3 flex items-center gap-2.5 px-3"
-                style={{
-                  borderRadius: 'var(--r-md)',
-                  border: '1px solid color-mix(in srgb, var(--good) 40%, transparent)',
-                  background: 'color-mix(in srgb, var(--good) 10%, transparent)',
-                }}
-              >
-                <WhatsAppIcon />
-                <span className="min-w-0 py-2">
-                  <span className="block text-[0.8125rem] font-semibold">
-                    Buy a QR ticket on WhatsApp
-                  </span>
-                  <span className="block text-[0.6875rem]" style={{ color: 'var(--muted)' }}>
-                    Skip the queue · no app to install
-                  </span>
-                </span>
-              </a>
+              <WhatsAppTicket from={origin.name} to={dest!.name} fare={fare[0]} />
             </div>
           )}
 
           {/* --- When you'd arrive, and the last train ----------------------- */}
           {journey && now && nextOut && (
             <div className="mt-4 pt-3" style={{ borderTop: '1px solid var(--rule)' }}>
-              <h3 className="eyebrow pb-1.5">If you leave now</h3>
+              <h3 className="eyebrow pb-1.5">
+                {closedForYou ? 'First train your way'
+                  : walk !== null ? `Walking there (${walk} min)` : 'If you leave now'}
+              </h3>
               <p className="text-[0.875rem]">
-                Catch the{' '}
+                {yourWay?.serviceEnded ? 'No more trains your way tonight. Take the first train at'
+                  : closedForYou ? 'You can’t reach the last train now. Take the first train at'
+                  : 'Catch the'}{' '}
                 <strong className="num" style={{ fontVariantNumeric: 'tabular-nums' }}>
                   {clockParts(nextOut.scheduled).time}
                   <span className="text-[0.75rem]"> {clockParts(nextOut.scheduled).meridiem}</span>

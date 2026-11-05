@@ -76,8 +76,26 @@ export function offPeakSaving(fare: FareTuple, peak: boolean): number | null {
  * claiming nothing. The smart card is where the real discount is, and the
  * fare list already shows it.
  *
- * Checked 2026-10-21; wa.me resolves to api.whatsapp.com and opens the app
- * when installed.
+ * The web link is wa.me. On a phone it is not enough on its own: when
+ * WhatsApp's universal link is skipped (in-app browsers, or after someone
+ * once chose "open in Safari") it lands on a "Continue to chat" page instead
+ * of the app, which reads as the button not working. whatsappTicketLink()
+ * goes to the app directly and keeps wa.me as the fallback.
  */
 export const WHATSAPP_TICKET_NUMBER = '8105556677';
 export const WHATSAPP_TICKET_URL = `https://wa.me/91${WHATSAPP_TICKET_NUMBER}?text=Hi`;
+
+/**
+ * The ticket link for this platform. Android asks for WhatsApp by package and
+ * falls back to wa.me itself; iPhone uses WhatsApp's own scheme, with the
+ * caller falling back to wa.me if nothing opened (iOS has no fallback field).
+ */
+export function whatsappTicketLink(platform: 'android' | 'ios' | 'other'): string {
+  const query = `phone=91${WHATSAPP_TICKET_NUMBER}&text=Hi`;
+  if (platform === 'android') {
+    return `intent://send?${query}#Intent;scheme=whatsapp;package=com.whatsapp;`
+      + `S.browser_fallback_url=${encodeURIComponent(WHATSAPP_TICKET_URL)};end`;
+  }
+  if (platform === 'ios') return `whatsapp://send?${query}`;
+  return WHATSAPP_TICKET_URL;
+}

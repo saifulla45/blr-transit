@@ -102,11 +102,14 @@ body {
   overflow-x: clip;
 }
 
-/* Translucent bar: the app bar and anything floating over content. */
+/* Translucent bar: the app bar and anything floating over content. Opaque
+   enough that scrolled text never reads through it. The prefixed line goes
+   FIRST: in the other order the CSS minifier kept only the -webkit copy, so
+   Chrome and Android got no blur at all. */
 .glass {
-  background: color-mix(in srgb, var(--ground) 82%, transparent);
-  backdrop-filter: blur(16px) saturate(1.6);
-  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  background: color-mix(in srgb, var(--ground) 93%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  backdrop-filter: blur(20px) saturate(1.6);
 }
 
 /* The emphasised phrase of a headline, lit with the brand gradient. */
@@ -162,8 +165,8 @@ body {
 .frost {
   background: rgba(255, 255, 255, .12);
   border: 1px solid rgba(255, 255, 255, .22);
-  backdrop-filter: blur(18px) saturate(1.4);
   -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
 }
 
 /*
@@ -451,8 +454,8 @@ h1, .section-title, .display {
   color: var(--ink);
   background: color-mix(in srgb, var(--surface) 80%, transparent);
   border: 1px solid var(--rule);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
 }
 
 /* Horizontal scrollers: no scrollbar, edges fade so overflow is visible. */

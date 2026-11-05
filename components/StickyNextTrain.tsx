@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import type { CalendarOverrides, StationTimetable } from '@/types/transit';
-import { nextDepartures } from '@/lib/departures';
-import { clockParts, formatRelative, nowInBengaluru } from '@/lib/time';
+import { leaveNow, nextDepartures, serviceResumes } from '@/lib/departures';
+import { useWalkMinutes } from '@/lib/useWalkMinutes';
+import { clockParts, formatMinutes, formatRelative, nowInBengaluru } from '@/lib/time';
 import { lineVar } from './primitives';
 import { TrainIcon } from './icons';
 
@@ -11,11 +12,17 @@ import { TrainIcon } from './icons';
  * Condensed next-train bar that appears once the departure board scrolls away.
  *
  * The whole point of the page is the next train; without this you lose it the
- * moment you scroll down to check parking or buses.
+ * moment you scroll down to check parking or buses. With a location it leads
+ * with when to set off; after the last train it says when service resumes
+ * instead of quoting tomorrow's times as if they were next.
  */
 export function StickyNextTrain({
-  timetable, overrides, stationName,
-}: { timetable: StationTimetable; overrides: CalendarOverrides; stationName: string }) {
+  timetable, overrides, stationName, stationLat, stationLon,
+}: {
+  timetable: StationTimetable; overrides: CalendarOverrides; stationName: string;
+  stationLat: number; stationLon: number;
+}) {
+  const walk = useWalkMinutes(stationLat, stationLon);
   const [now, setNow] = useState<ReturnType<typeof nowInBengaluru> | null>(null);
   const [visible, setVisible] = useState(false);
 
@@ -41,9 +48,15 @@ export function StickyNextTrain({
   if (!now) return null;
 
   const groups = nextDepartures({
-    timetable, overrides, date: now.date, minutes: now.minutes, limit: 1,
+    // Deep enough that a long walk still finds a train it can catch.
+    timetable, overrides, date: now.date, minutes: now.minutes, limit: 8,
   });
+  const resumes = serviceResumes(groups);
+  const plan = walk !== null && !resumes ? leaveNow(groups, walk) : null;
   const upcoming = groups
+    // A closed direction's 5:30am first train is not a "next train"; the
+    // board says "Not running now" for it, and the bar must not contradict it.
+    .filter((g) => resumes || !g.serviceEnded)
     .map((g) => ({ g, u: g.upcoming[0] }))
     .filter((x) => x.u)
     .sort((a, b) => a.u.inMinutes - b.u.inMinutes)
@@ -54,6 +67,8 @@ export function StickyNextTrain({
   return (
     <div
       aria-hidden={!visible}
+      // Hidden means unreachable too, not just unannounced.
+      inert={!visible}
       className="safe-bottom pointer-events-none fixed inset-x-0 bottom-0 z-30 px-4 pb-4 transition-all duration-200"
       style={{
         opacity: visible ? 1 : 0,
@@ -75,11 +90,36 @@ export function StickyNextTrain({
             of what they are or which station they belong to. */}
         <div className="flex items-center gap-1.5 pb-1.5 opacity-60">
           <TrainIcon size={13} />
-          <span className="text-[0.625rem] font-semibold uppercase tracking-[0.1em]">
-            Next trains from {stationName}
+          <span className="truncate text-[0.625rem] font-semibold uppercase tracking-[0.1em]">
+            {resumes ? `${stationName} · closed for the night` : `Next trains from ${stationName}`}
           </span>
         </div>
 
+        {plan && (
+          <a href="#departures" className="mb-2 flex items-center gap-2.5 rounded-xl px-3 py-2"
+            style={{ background: 'rgba(255,255,255,.1)' }}>
+            <WalkIcon />
+            <span className="min-w-0 flex-1 text-[0.8125rem] leading-snug">
+              <strong className="text-[0.9375rem]">
+                {plan.leaveIn === 0 ? 'Leave now' : `Leave in ${plan.leaveIn} min`}
+              </strong>
+              <span className="opacity-75">
+                {' '}· {walk} min walk for the {formatMinutes(plan.train.scheduled)}
+              </span>
+            </span>
+          </a>
+        )}
+
+        {resumes ? (
+          <a href="#departures" className="block">
+            <span className="block text-[1.0625rem] font-semibold">
+              First train {formatMinutes(resumes.scheduled)}
+            </span>
+            <span className="block text-[0.75rem] opacity-70">
+              Service resumes {formatRelative(resumes.inMinutes)}
+            </span>
+          </a>
+        ) : (
         <div className="flex items-center gap-4">
         {upcoming.map(({ g, u }) => (
           <a
@@ -114,7 +154,18 @@ export function StickyNextTrain({
           </a>
         ))}
         </div>
+        )}
       </div>
     </div>
+  );
+}
+
+function WalkIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0">
+      <circle cx="13" cy="4.5" r="2" />
+      <path d="M10 21l2-6 3 3v3M9 12l1.5-4.5L14 9l2 3M7 21l2.5-7" />
+    </svg>
   );
 }

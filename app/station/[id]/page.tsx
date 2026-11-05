@@ -161,7 +161,7 @@ export default async function StationPage({ params }: { params: Promise<{ id: st
         <LineStrip station={station} lines={lines} stations={stationsLite} />
       </div>
 
-      {/* Client-only: renders once a location (real or test) is known. */}
+      {/* Client-only: renders once a location is known. */}
       <div className="max-w-[46rem] empty:hidden [&:not(:empty)]:pb-6"><GettingHere station={station} /></div>
 
       <SectionNav hasBuses={buses.length > 0} />
@@ -205,6 +205,8 @@ export default async function StationPage({ params }: { params: Promise<{ id: st
                 overrides={overrides}
                 lines={lines}
                 fareWindows={fareWindows}
+                stationLat={station.lat}
+                stationLon={station.lon}
               />
             </div>
           </Reveal>
@@ -224,7 +226,13 @@ export default async function StationPage({ params }: { params: Promise<{ id: st
     </main>
     {/* Outside <main>: page-lift leaves a transform on main, which would make
         this fixed bar scroll with the page instead of floating. */}
-    <StickyNextTrain timetable={timetable} overrides={overrides} stationName={station.name} />
+    <StickyNextTrain
+      timetable={timetable}
+      overrides={overrides}
+      stationName={station.name}
+      stationLat={station.lat}
+      stationLon={station.lon}
+    />
     <SiteFooter>
       Metro timetables Vonter/bmrcl-gtfs · buses Vonter/bmtc-gtfs (both ODbL 1.0) · parking
       BMRCL · places and map data © OpenStreetMap contributors

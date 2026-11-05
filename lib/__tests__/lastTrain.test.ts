@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lastTrainToward } from '../lastTrain';
+import { groupToward, lastTrainToward } from '../lastTrain';
 import type { DirectionGroup } from '../departures';
 import type { Line } from '@/types/transit';
 
@@ -91,5 +91,22 @@ describe('lastTrainToward', () => {
     expect(lastTrainToward(['X', 'G3'], 0, [], LINES, nameById)).toBeNull();
     // A path whose hop is not on any single line.
     expect(lastTrainToward(['G1', 'P4'], 0, GROUPS, LINES, nameById)).toBeNull();
+  });
+});
+
+describe('groupToward', () => {
+  it('returns the direction heading to the destination, not the soonest train', () => {
+    const withTrains = GROUPS.map((g, i) => ({
+      ...g,
+      // Gee One's train leaves first, but it heads the wrong way for G4.
+      upcoming: [{ scheduled: 600 + (i === 1 ? 0 : 5), inMinutes: i === 1 ? 1 : 6, headsign: g.primaryHeadsign, nextDay: false, firstOfDay: false }],
+    }));
+    const chosen = groupToward(['X', 'G3', 'G4'], withTrains, LINES, nameById)!;
+    expect(chosen.primaryHeadsign).toBe('Gee Four');
+    expect(chosen.upcoming[0].inMinutes).toBe(6);
+  });
+
+  it('gives no direction rather than a guess when the path is unknown', () => {
+    expect(groupToward(['X', 'NOWHERE'], GROUPS, LINES, nameById)).toBeNull();
   });
 });

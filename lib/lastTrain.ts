@@ -44,6 +44,27 @@ export function lastTrainToward(
   interchanges: number,
   groups: DirectionGroup[],
   lines: Line[],
+  nameById: (id: string) => string | undefined,
+): LastTrainToward | null {
+  const chosen = groupToward(path, groups, lines, nameById);
+  if (!chosen) return null;
+  return {
+    minutes: chosen.lastTrain,
+    line: chosen.line,
+    headsign: chosen.primaryHeadsign,
+    viaInterchange: interchanges > 0,
+  };
+}
+
+/**
+ * The departure group at the origin that heads along `path`, or null when
+ * the direction cannot be identified. Shared by the last-train line and
+ * "catch the next train", which both have to mean the train going YOUR way.
+ */
+export function groupToward(
+  path: string[],
+  groups: DirectionGroup[],
+  lines: Line[],
   /*
     Needed because `line.order` holds station IDS while `primaryHeadsign` is
     a station NAME. Matching one against the other directly always fails and
@@ -52,7 +73,7 @@ export function lastTrainToward(
     looks like it works.
   */
   nameById: (id: string) => string | undefined,
-): LastTrainToward | null {
+): DirectionGroup | null {
   if (path.length < 2 || groups.length === 0) return null;
 
   const [originId, nextId] = path;
@@ -89,19 +110,10 @@ export function lastTrainToward(
 
   // Fall back to a single remaining candidate: a terminus station has only
   // one direction, and its headsign may not resolve to a station id.
-  const chosen = sameWay.length > 0
+  return sameWay.length > 0
     ? sameWay.reduce((a, b) => (a.lastTrain >= b.lastTrain ? a : b))
     : candidates.length === 1 ? candidates[0]
     : null;
-
-  if (!chosen) return null;
-
-  return {
-    minutes: chosen.lastTrain,
-    line: chosen.line,
-    headsign: chosen.primaryHeadsign,
-    viaInterchange: interchanges > 0,
-  };
 }
 
 function normalise(s: string): string {

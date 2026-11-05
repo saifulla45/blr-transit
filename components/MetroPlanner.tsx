@@ -6,10 +6,11 @@ import type {
   CalendarOverrides, FareWindows, JourneyMatrix, Line, StationLite,
 } from '@/types/transit';
 import {
-  WHATSAPP_TICKET_URL, fareOptions, formatRupees, isPeak, type FareTuple,
+  fareOptions, formatRupees, isPeak, type FareTuple,
 } from '@/lib/fares';
 import { nowInBengaluru, servicePatternFor } from '@/lib/time';
-import { InterchangeIcon, TicketIcon, WhatsAppIcon } from './icons';
+import { InterchangeIcon, TicketIcon } from './icons';
+import { WhatsAppTicket } from './WhatsAppTicket';
 import { JourneyPath } from './JourneyPath';
 import { StationPicker } from './StationPicker';
 
@@ -132,9 +133,14 @@ export function MetroPlanner({
       </div>
 
       {from && to && loading && (
-        <p className="mt-3 text-[0.8125rem]" style={{ color: 'var(--muted)' }}>
-          Working it out…
-        </p>
+        <div className="mt-4 flex flex-col gap-2.5" role="status">
+          <span className="sr-only">Working out the journey…</span>
+          <div className="grid grid-cols-3 gap-2">
+            {[0, 1, 2].map((i) => <span key={i} className="skeleton h-14" />)}
+          </div>
+          <span className="skeleton h-4 w-40" />
+          <span className="skeleton h-20 w-full" />
+        </div>
       )}
 
       {from && to && !loading && !journey && data && (
@@ -177,26 +183,7 @@ export function MetroPlanner({
             anyone planning from the home page had to find a station page
             first. Same link and same wording as the station panel.
           */}
-          <a
-            href={WHATSAPP_TICKET_URL}
-            rel="noreferrer"
-            className="tap mt-3 flex items-center gap-2.5 px-3"
-            style={{
-              borderRadius: 'var(--r-md)',
-              border: '1px solid color-mix(in srgb, var(--good) 40%, transparent)',
-              background: 'color-mix(in srgb, var(--good) 10%, transparent)',
-            }}
-          >
-            <WhatsAppIcon />
-            <span className="min-w-0 py-2">
-              <span className="block text-[0.8125rem] font-semibold">
-                Buy a QR ticket on WhatsApp
-              </span>
-              <span className="block text-[0.6875rem]" style={{ color: 'var(--muted)' }}>
-                Skip the queue · no app to install
-              </span>
-            </span>
-          </a>
+          <WhatsAppTicket from={from!.name} to={to!.name} fare={fare?.[0]} />
 
           <div className="mt-4">
             <JourneyPath path={journey[3]} stations={stations} />

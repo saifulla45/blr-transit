@@ -54,7 +54,8 @@ export function AppBar({
           {back ? (
             <span className="flex items-center gap-2">
               <LogoMark size={36} />
-              <span className={`text-[1rem] font-bold tracking-[-0.015em] transition-opacity duration-300 ${
+              {/* Under 360px the wordmark pushed Save off the screen. */}
+              <span className={`text-[1rem] font-bold tracking-[-0.015em] max-[359px]:hidden ${
                 scrolled && title ? 'hidden' : ''}`}>
                 Namma Commute
               </span>

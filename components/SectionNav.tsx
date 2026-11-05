@@ -49,7 +49,7 @@ export function SectionNav({ hasBuses }: { hasBuses: boolean }) {
     <nav
       className="sticky top-[calc(3.5rem+max(0.5rem,env(safe-area-inset-top)))] z-20 -mx-5 mb-1 px-5 py-2.5 md:-mx-8 md:px-8"
       style={{
-        background: 'color-mix(in srgb, var(--ground) 82%, transparent)',
+        background: 'color-mix(in srgb, var(--ground) 93%, transparent)',
         backdropFilter: 'blur(16px) saturate(1.4)',
         WebkitBackdropFilter: 'blur(16px) saturate(1.4)',
       }}

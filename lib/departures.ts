@@ -15,6 +15,8 @@ export interface UpcomingDeparture {
   headsign: string;
   /** True when the train runs after midnight tonight, or is tomorrow's first. */
   nextDay: boolean;
+  /** The first departure of its service day in this direction. */
+  firstOfDay: boolean;
 }
 
 export interface DirectionGroup {
@@ -27,7 +29,11 @@ export interface DirectionGroup {
   /** All destinations served, so short-loops are visible. */
   headsigns: string[];
   upcoming: UpcomingDeparture[];
-  /** No more trains today; `upcoming` holds tomorrow's first instead. */
+  /**
+   * Not running now: the next train is the first of a service day and more
+   * than CLOSED_GAP_MIN away. True from the last train right through to the
+   * morning, not only until midnight.
+   */
   serviceEnded: boolean;
   firstTrain: number;
   lastTrain: number;
@@ -48,6 +54,9 @@ export interface DeparturesInput {
  * Next departures per (line, direction), merging destinations so a rider sees a
  * single chronological list and can tell a short-loop from a full run.
  */
+// Under this, "first train in 20 min" reads better as a departure than as closed.
+const CLOSED_GAP_MIN = 30;
+
 export function nextDepartures(input: DeparturesInput): DirectionGroup[] {
   const { timetable, overrides, date, minutes, limit = 4 } = input;
 
@@ -93,10 +102,19 @@ export function nextDepartures(input: DeparturesInput): DirectionGroup[] {
 
   for (const g of groups.values()) {
     const candidates: UpcomingDeparture[] = [];
+    // A direction's first train per service day, across all its headsigns.
+    const firstByDay = new Map<ServicePattern, number>();
+    for (const { pattern } of days) {
+      const times = (timetable.schedule[pattern] ?? [])
+        .filter((e) => e.line === g.line && e.direction === g.direction)
+        .flatMap((e) => e.departures);
+      if (times.length) firstByDay.set(pattern, Math.min(...times));
+    }
 
     for (const { pattern, offset } of days) {
       for (const entry of timetable.schedule[pattern] ?? []) {
         if (entry.line !== g.line || entry.direction !== g.direction) continue;
+        const first = firstByDay.get(pattern);
         for (const t of entry.departures) {
           const delta = t + offset - minutes;
           if (delta < 0) continue;
@@ -106,6 +124,7 @@ export function nextDepartures(input: DeparturesInput): DirectionGroup[] {
             headsign: entry.headsign,
             // Anything that lands past today's midnight boundary.
             nextDay: t + offset >= 1440,
+            firstOfDay: t === first,
           });
         }
       }
@@ -113,9 +132,15 @@ export function nextDepartures(input: DeparturesInput): DirectionGroup[] {
 
     candidates.sort((a, b) => a.inMinutes - b.inMinutes);
     g.upcoming = candidates.slice(0, limit);
-    // If the soonest train is tomorrow's, today's service is done.
-    g.serviceEnded = g.upcoming.length > 0 && g.upcoming[0].nextDay
-      && g.upcoming[0].scheduled + 1440 - minutes === g.upcoming[0].inMinutes;
+    /*
+      Closed when the soonest train opens a service day and is a while off.
+      Keying on "tomorrow" alone stopped at midnight: at 12:30am the 6am
+      train belongs to the new calendar day, so the board went back to
+      quoting it in big digits as though it were simply the next train.
+    */
+    const soonest = g.upcoming[0];
+    // Nothing ahead at all (no trains tomorrow on this direction) is closed too.
+    g.serviceEnded = soonest === undefined || (soonest.firstOfDay && soonest.inMinutes > CLOSED_GAP_MIN);
     if (g.firstTrain === Infinity) g.firstTrain = 0;
     if (g.lastTrain === -Infinity) g.lastTrain = 0;
     // Dedupe while preserving "most trains first" order.
@@ -125,4 +150,52 @@ export function nextDepartures(input: DeparturesInput): DirectionGroup[] {
   return [...groups.values()].sort(
     (a, b) => a.line.localeCompare(b.line) || a.direction.localeCompare(b.direction),
   );
+}
+
+/**
+ * The trains still to come in the service that is running now: everything up
+ * to the first train of the next service day. Calendar dates cannot draw this
+ * line — at 12:05am tomorrow's 6:20 has the same date as now — so it is drawn
+ * at the start of the next service instead.
+ */
+export function thisService(upcoming: UpcomingDeparture[]): UpcomingDeparture[] {
+  const nextStart = upcoming.findIndex((u, i) => i > 0 && u.firstOfDay);
+  return nextStart === -1 ? upcoming : upcoming.slice(0, nextStart);
+}
+
+export interface LeaveNow {
+  /** Minutes until you should set off; 0 means go now. */
+  leaveIn: number;
+  train: UpcomingDeparture;
+  group: DirectionGroup;
+}
+
+/**
+ * The first train you can still walk to, and when to set off for it.
+ *
+ * Only trains in the service running now count — including the runs just
+ * past midnight — because telling someone to leave in six hours for the
+ * morning's first train is not advice. Groups need a deep enough `upcoming`
+ * list (call nextDepartures with a larger limit) for a long walk to find one.
+ */
+export function leaveNow(groups: DirectionGroup[], walkMinutes: number): LeaveNow | null {
+  let best: LeaveNow | null = null;
+  for (const group of groups) {
+    if (group.serviceEnded) continue;
+    const train = thisService(group.upcoming).find((u) => u.inMinutes >= walkMinutes);
+    if (!train) continue;
+    if (!best || train.inMinutes < best.train.inMinutes) {
+      best = { leaveIn: train.inMinutes - walkMinutes, train, group };
+    }
+  }
+  return best;
+}
+
+/** Every direction is closed; the earliest first train, i.e. when service resumes. */
+export function serviceResumes(groups: DirectionGroup[]): UpcomingDeparture | null {
+  if (groups.length === 0 || !groups.every((g) => g.serviceEnded)) return null;
+  return groups
+    .map((g) => g.upcoming[0])
+    .filter((u): u is UpcomingDeparture => u !== undefined)
+    .sort((a, b) => a.inMinutes - b.inMinutes)[0] ?? null;
 }
