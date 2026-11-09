@@ -6,12 +6,20 @@
  * out of band with no page context to resolve a relative path against. Every
  * one of them is baked at build, so this has to be known at build too.
  *
- * Set NEXT_PUBLIC_SITE_URL in Netlify when a custom domain is attached. The
- * default is the Netlify subdomain rather than a placeholder, so a forgotten
- * env var ships a working sitemap instead of a sitemap full of example.com.
+ * The default is wherever the site actually lives, never a placeholder, so a
+ * forgotten env var still ships a working sitemap rather than one full of
+ * example.com. It pointed at the old Netlify subdomain after the move to
+ * Cloudflare, which meant the live site handed Google a sitemap, a robots
+ * pointer and an og:url all naming a different host — telling crawlers the
+ * real copy was somewhere else, so this one could never rank.
+ *
+ * Override it at BUILD time when a custom domain is attached, because every
+ * one of these URLs is baked into the output:
+ *
+ *   NEXT_PUBLIC_SITE_URL=https://nammacommute.com npm run build
  */
 export const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://namma-commute.netlify.app'
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://namma-commute.pages.dev'
 ).replace(/\/$/, '');
 
 export const SITE_NAME = 'Namma Commute';

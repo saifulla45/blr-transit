@@ -63,10 +63,10 @@ export default function PrivacyPage() {
 
         <h2>Hosting</h2>
         <p>
-          The site is served by Netlify, which like any web host records standard server
-          logs including IP addresses. That is outside this site&rsquo;s control and is
-          covered by{' '}
-          <a href="https://www.netlify.com/privacy/">Netlify&rsquo;s privacy policy</a>.
+          The site is served by Cloudflare Pages, which like any web host records standard
+          server logs including IP addresses. That is outside this site&rsquo;s control and
+          is covered by{' '}
+          <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare&rsquo;s privacy policy</a>.
         </p>
 
         <h2>Map tiles</h2>
