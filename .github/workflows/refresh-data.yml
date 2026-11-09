@@ -1,8 +1,11 @@
 name: Refresh transit data
 
 # The upstream GTFS feed and BMRCL's parking page change occasionally. This
-# re-runs the pipeline weekly and commits only when something actually changed,
-# which triggers a Vercel deploy and regenerates the static pages.
+# re-runs the pipeline weekly and commits only when something actually
+# changed. The site is hosted on Cloudflare Pages; once the repo is connected
+# there, that commit is what rebuilds and redeploys the static pages. Until
+# it is connected, this keeps the DATA current in git but the live site still
+# needs a manual upload — so connecting it is what closes the loop.
 on:
   schedule:
     - cron: '0 20 * * 0'   # Mondays 01:30 IST
